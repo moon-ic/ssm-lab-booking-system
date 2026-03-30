@@ -1,10 +1,6 @@
 # 实验室设备管理系统
 
-本仓库是实验室设备管理系统的 monorepo 基础工程，包含：
-
-- `admin-ui`：后台管理前端，基于 Vue 3 + TypeScript + Vite + Element Plus
-- `admin-server`：后台管理后端，基于 Spring Boot 3 + Spring Security + MySQL
-- Redis 基础设施：支持 Redis 优先、内存兜底的 token 和缓存能力
+本仓库是实验室设备管理系统的 monorepo 工程，包含前端管理端、后端服务、需求文档与开发辅助 skill。
 
 ## 目录结构
 
@@ -15,6 +11,12 @@
 ├─ md
 └─ .agents
 ```
+
+## 技术栈
+
+- `admin-ui`：Vue 3 + TypeScript + Vite + Element Plus
+- `admin-server`：Spring Boot 3 + Spring Security + MySQL
+- Redis：支持 Redis 优先、内存兜底的 token 与缓存实现
 
 ## 启动说明
 
@@ -35,9 +37,9 @@ mvn spring-boot:run
 
 默认数据库连接可通过以下环境变量覆盖：
 
+- `DB_URL`
 - `DB_USERNAME`
 - `DB_PASSWORD`
-- `DB_URL`
 
 Redis 可通过以下环境变量启用：
 
@@ -63,35 +65,50 @@ Redis 可通过以下环境变量启用：
 - 超级管理员和管理员可使用“登录标识”或“账号”登录
 - 教师使用工号登录
 - 学生使用学号登录
-- 如果数据库里这 4 个内置账号仍保留旧默认密码 `123456`，应用启动时会自动升级为 `000000`
+- 新创建账号默认密码为 `000000`
+- 新创建账号或被重置密码的账号，首次登录后需要先修改密码
 
-## 后端完成度
+## 文档
 
-对照 `md/equipment-borrowing-api-doc.md` 的模块划分，后端已完成以下主要模块：
+- PRD：[md/equipment-borrowing-admin-prd.md](/D:/program/booking-skill-demo/md/equipment-borrowing-admin-prd.md)
+- API 文档：[md/equipment-borrowing-api-doc.md](/D:/program/booking-skill-demo/md/equipment-borrowing-api-doc.md)
+
+## 后端已实现模块
+
+对照 API 文档，后端目前已完成以下模块：
 
 - 认证与登录
 - 用户管理
 - 角色与权限
-- 个人中心
 - 设备管理
+- 设备导入
 - 预约与审核
 - 借用与归还
 - 维修管理
+- 个人中心
+- 待确认消息 / 通知中心
 - 统计分析
 - 菜单 / 图标配置
 - 定时任务
-- 通知中心 / 任务执行日志
+- 定时任务执行日志
 - MySQL 持久化
 - Redis 基础设施接入
 
-当前仍有两类明确未完全闭环的点：
-
-- `/api/devices/import` 仍为占位接口，返回“导入方式待确认”
-- API 文档中标记为 `TODO` 的业务规则还没有全部产品化，例如多级审核、首次登录强制改密、管理员代取代还、外部通知渠道、导入文件格式等
-
 ## 当前工程内容
 
-- 管理后台前后端基础骨架
+- 管理后台前后端基础工程
 - 统一 `/api` 接口前缀
-- 认证、用户、角色权限、设备、预约、借还、维修、统计、菜单、通知、定时任务等后端模块
-- MySQL 初始化脚本与测试库重置能力
+- MySQL 初始化脚本
+- 后端集成测试与回归测试
+- 需求文档与接口文档
+
+## 测试
+
+在后端目录执行：
+
+```bash
+cd admin-server
+mvn clean test
+```
+
+当前主业务链路和主要公开接口已完成回归测试。
