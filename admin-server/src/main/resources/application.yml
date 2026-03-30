@@ -7,23 +7,24 @@ spring:
   application:
     name: admin-server
   datasource:
-    url: jdbc:mysql://localhost:3306/lab_equipment?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/lab_booking?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:200453}
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     redis:
-      host: localhost
-      port: 6379
-      database: 0
-
-mybatis-plus:
-  mapper-locations: classpath*:/mapper/**/*.xml
-  configuration:
-    map-underscore-to-camel-case: true
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 3s
 
 app:
   security:
-    permit-paths:
-      - /api/health
+    token-header: Authorization
+  redis:
+    enabled: ${APP_REDIS_ENABLED:false}
+    key-prefix: ${APP_REDIS_KEY_PREFIX:lab-booking:}
+    token-ttl: ${APP_REDIS_TOKEN_TTL:12h}
+    cache-ttl: ${APP_REDIS_CACHE_TTL:5m}
 
