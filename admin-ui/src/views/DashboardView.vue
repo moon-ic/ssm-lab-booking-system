@@ -1,25 +1,39 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { getAccessibleMenuItems } from '@/router/access'
+import { useAuthStore } from '@/store/auth'
+
+const authStore = useAuthStore()
+
+const userName = computed(() => authStore.state.currentUser?.name ?? authStore.state.session?.userInfo.name ?? '--')
+const roleCode = computed(() => authStore.state.currentUser?.roleCode ?? authStore.state.session?.userInfo.roleCode ?? '--')
+const firstLoginRequired = computed(() => Boolean(authStore.state.session?.firstLoginRequired))
+const menuItems = computed(() => getAccessibleMenuItems(roleCode.value))
+</script>
+
 <template>
   <div class="dashboard-grid">
     <section class="hero-card">
-      <span class="eyebrow">Project Bootstrap</span>
-      <h2>项目已经完成前后端基础初始化</h2>
+      <span class="eyebrow">Permission Ready</span>
+      <h2>Role-aware routing is now active</h2>
       <p>
-        当前页面用于确认路由、布局和样式链路正常，后续可以继续接入登录、设备管理、预约审核和统计分析模块。
+        Signed in as <strong>{{ userName }}</strong> with role <strong>{{ roleCode }}</strong>. The sidebar and route
+        access now follow the role definition from the PRD and API contract.
       </p>
     </section>
 
     <section class="stats-grid">
       <article class="stat-card">
-        <strong>admin-ui</strong>
-        <span>Vue 3 + TypeScript + Vite</span>
+        <strong>First-login mode</strong>
+        <span>{{ firstLoginRequired ? 'Dashboard only until password change' : 'All eligible modules unlocked' }}</span>
       </article>
       <article class="stat-card">
-        <strong>admin-server</strong>
-        <span>Spring Boot 3 + Security + MyBatis Plus</span>
+        <strong>Visible menus</strong>
+        <span>{{ menuItems.length }} items</span>
       </article>
       <article class="stat-card">
-        <strong>API Prefix</strong>
-        <span>/api</span>
+        <strong>Guard strategy</strong>
+        <span>auth + role meta + 403 fallback</span>
       </article>
     </section>
   </div>
@@ -92,4 +106,3 @@
   }
 }
 </style>
-

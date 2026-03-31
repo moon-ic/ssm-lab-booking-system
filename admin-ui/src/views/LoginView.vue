@@ -1,0 +1,232 @@
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/store/auth'
+
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+const formRef = ref()
+const loading = ref(false)
+
+const form = reactive({
+  loginId: '',
+  password: ''
+})
+
+const rules = {
+  loginId: [{ required: true, message: '请输入账号', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+
+async function submit() {
+  await formRef.value?.validate()
+  loading.value = true
+
+  try {
+    const session = await authStore.signIn(form)
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+
+    if (session.firstLoginRequired) {
+      ElMessage.warning('首次登录需先修改密码')
+    } else {
+      ElMessage.success(`欢迎回来，${session.userInfo.name}`)
+    }
+
+    await router.replace(redirect)
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '登录失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+function fillDemo(loginId: string, password: string) {
+  form.loginId = loginId
+  form.password = password
+}
+</script>
+
+<template>
+  <div class="login-page">
+    <section class="login-hero">
+      <span class="login-badge">Equipment Borrowing Admin</span>
+      <h1>实验设备借用后台</h1>
+      <p>
+        登录后可继续进入设备管理、预约审核、借用记录和后续业务模块。当前页面已内置 mock 场景，便于前后端并行开发。
+      </p>
+      <div class="demo-panel">
+        <button type="button" @click="fillDemo('admin', '000000')">
+          首登账号：admin / 000000
+        </button>
+        <button type="button" @click="fillDemo('teacher01', 'password123')">
+          普通账号：teacher01 / password123
+        </button>
+        <button type="button" @click="fillDemo('disabled', 'password123')">
+          禁用账号：disabled / password123
+        </button>
+      </div>
+    </section>
+
+    <section class="login-card">
+      <div class="card-header">
+        <h2>账号登录</h2>
+        <p>支持账号状态校验、首登改密提醒和登录态持久化。</p>
+      </div>
+
+      <ElForm ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="submit">
+        <ElFormItem label="登录账号" prop="loginId">
+          <ElInput v-model="form.loginId" placeholder="请输入工号 / 学号 / 账号" size="large" />
+        </ElFormItem>
+        <ElFormItem label="登录密码" prop="password">
+          <ElInput
+            v-model="form.password"
+            type="password"
+            placeholder="请输入密码"
+            size="large"
+            show-password
+            @keyup.enter="submit"
+          />
+        </ElFormItem>
+
+        <ElButton class="submit-button" type="primary" size="large" :loading="loading" @click="submit">
+          登录系统
+        </ElButton>
+      </ElForm>
+
+      <ul class="login-tips">
+        <li>默认 mock 已覆盖成功、密码错误、禁用账号、首次登录改密。</li>
+        <li>将 `VITE_ENABLE_MOCK=false` 后可直接切换到真实后端接口。</li>
+      </ul>
+    </section>
+  </div>
+</template>
+
+<style scoped>
+.login-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 420px);
+  min-height: 100vh;
+  padding: 32px;
+  gap: 24px;
+}
+
+.login-hero,
+.login-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 28px;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
+}
+
+.login-hero {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 640px;
+  padding: 56px;
+  color: #eff6ff;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.24), transparent 30%),
+    linear-gradient(140deg, #0f172a 0%, #0f766e 52%, #f59e0b 100%);
+}
+
+.login-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.login-hero h1 {
+  margin: 18px 0 16px;
+  font-size: clamp(38px, 5vw, 64px);
+  line-height: 1.05;
+}
+
+.login-hero p {
+  max-width: 560px;
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.8;
+  color: rgba(239, 246, 255, 0.86);
+}
+
+.demo-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.demo-panel button {
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 18px;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.demo-panel button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.login-card {
+  align-self: center;
+  padding: 36px 32px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 30px;
+  color: #0f172a;
+}
+
+.card-header p {
+  margin: 10px 0 24px;
+  line-height: 1.7;
+  color: #64748b;
+}
+
+.submit-button {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.login-tips {
+  margin: 24px 0 0;
+  padding-left: 18px;
+  color: #475569;
+  line-height: 1.8;
+}
+
+@media (max-width: 980px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    padding: 18px;
+  }
+
+  .login-hero {
+    min-height: auto;
+    padding: 32px 24px;
+  }
+
+  .login-card {
+    padding: 28px 22px;
+  }
+}
+</style>

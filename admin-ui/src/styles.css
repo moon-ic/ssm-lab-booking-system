@@ -1,6 +1,8 @@
 :root {
   color: #1f2937;
-  background: linear-gradient(180deg, #f3f6fb 0%, #eef3f8 100%);
+  background:
+    radial-gradient(circle at top, rgba(251, 191, 36, 0.16), transparent 24%),
+    linear-gradient(180deg, #f8fafc 0%, #edf4f7 100%);
   font-family: "Segoe UI", "PingFang SC", sans-serif;
 }
 
@@ -11,6 +13,7 @@
 body {
   margin: 0;
   min-width: 320px;
+  color: #0f172a;
 }
 
 a {
@@ -22,3 +25,8 @@ a {
   min-height: 100vh;
 }
 
+button,
+input,
+textarea {
+  font: inherit;
+}

@@ -7,6 +7,7 @@ dist/
 
 admin-ui/node_modules/
 admin-ui/dist/
+admin-ui/coverage/
 
 admin-server/target/
 admin-server/.mvn/
@@ -15,4 +16,3 @@ admin-server/logs/
 .env
 .env.local
 .env.*.local
-
