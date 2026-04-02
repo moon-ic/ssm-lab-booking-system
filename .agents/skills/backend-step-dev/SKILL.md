@@ -1,6 +1,6 @@
 ---
 name: backend-step-dev
-description: 按模块基于 API 文档开发 Spring Boot 后端（先内存实现）。
+description: 系统前期开发结束之前，按模块基于 API 文档开发 Spring Boot 后端（先内存实现）。
 ---
 
 # 原则

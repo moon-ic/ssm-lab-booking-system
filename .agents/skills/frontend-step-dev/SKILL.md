@@ -1,6 +1,6 @@
 ---
 name: frontend-step-dev
-description: 按模块基于 PRD + API 开发前端（先 mock）。
+description: 系统前期开发结束之前，按模块基于 PRD + API 开发前端（先 mock）。
 ---
 
 # 原则
