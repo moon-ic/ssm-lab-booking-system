@@ -86,9 +86,9 @@ public class DatabaseBootstrap {
     private void upgradeBuiltinPasswordsIfNeeded() {
         jdbcTemplate.update("""
                 UPDATE sys_user
-                SET password = '000000'
+                SET password = '0000'
                 WHERE login_id IN ('SA001', 'A001', 'T2026001', '20230001')
-                  AND password = '123456'
+                  AND password IN ('123456', '000000')
                 """);
         jdbcTemplate.update("""
                 UPDATE sys_user

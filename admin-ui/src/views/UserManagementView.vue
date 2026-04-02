@@ -179,7 +179,7 @@ async function submitCreate() {
       } satisfies CreateStudentPayload)
     }
 
-    ElMessage.success(`${createRoleLabel(selectedCreateRole.value)} created with default password 000000`)
+    ElMessage.success(`${createRoleLabel(selectedCreateRole.value)} created with default password 0000`)
     createDialogVisible.value = false
     resetCreateForm()
     await loadUsers()
@@ -201,7 +201,7 @@ async function handleStatusChange(row: UserListItem, status: UserStatus) {
 async function handleResetPassword(row: UserListItem) {
   try {
     await ElMessageBox.confirm(
-      `Reset ${row.name}'s password to 000000 and require password change on next login?`,
+      `Reset ${row.name}'s password to 0000 and require password change on next login?`,
       'Reset password',
       {
         confirmButtonText: 'Reset',
@@ -210,7 +210,7 @@ async function handleResetPassword(row: UserListItem) {
       }
     )
 
-    await resetPassword(row.userId, { newPassword: '000000' } satisfies ResetPasswordPayload)
+    await resetPassword(row.userId, { newPassword: '0000' } satisfies ResetPasswordPayload)
     ElMessage.success('Password reset completed')
     await loadUsers()
   } catch (error) {

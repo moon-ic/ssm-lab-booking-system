@@ -1,8 +1,8 @@
 INSERT INTO sys_user (user_id, name, account, login_id, phone, role_code, status, credit_score, password, first_login_required, manager_id, deleted) VALUES
-    (1, 'System Admin', 'superadmin', 'SA001', '13800000000', 'SUPER_ADMIN', 'ENABLED', 100, '000000', 0, NULL, 0),
-    (2, 'Device Admin', 'admin01', 'A001', '13800000001', 'ADMIN', 'ENABLED', 100, '000000', 0, 1, 0),
-    (3, 'Teacher Li', 'teacher01', 'T2026001', '13800000002', 'TEACHER', 'ENABLED', 100, '000000', 0, 2, 0),
-    (4, 'Student Wang', 'student01', '20230001', '13800000003', 'STUDENT', 'ENABLED', 100, '000000', 0, 3, 0);
+    (1, 'System Admin', 'superadmin', 'SA001', '13800000000', 'SUPER_ADMIN', 'ENABLED', 100, '0000', 0, NULL, 0),
+    (2, 'Device Admin', 'admin01', 'A001', '13800000001', 'ADMIN', 'ENABLED', 100, '0000', 0, 1, 0),
+    (3, 'Teacher Li', 'teacher01', 'T2026001', '13800000002', 'TEACHER', 'ENABLED', 100, '0000', 0, 2, 0),
+    (4, 'Student Wang', 'student01', '20230001', '13800000003', 'STUDENT', 'ENABLED', 100, '0000', 0, 3, 0);
 
 INSERT INTO sys_role (role_id, role_name, role_code, remark) VALUES
     (1, 'Super Admin', 'SUPER_ADMIN', 'Built-in role'),

@@ -47,9 +47,9 @@
 - 前端默认 `VITE_ENABLE_MOCK=false`
 - 前端默认 `VITE_API_BASE=/api`
 - Vite 开发代理默认转发：
-  - `/api -> http://localhost:8081`
+    - `/api -> http://localhost:8081`
 - 后端默认数据库：
-  - `lab_booking`
+    - `lab_booking`
 
 也就是说，正常情况下你本地启动前后端后，前端会直接调用真实后端，而不是 mock。
 
@@ -76,8 +76,8 @@ GET http://127.0.0.1:8081/api/health
 
 ```bash
 cd admin-ui
-npm install
-npm run dev
+pnpm i
+pnpm dev
 ```
 
 Vite 默认端口是 `5173`。如果端口被占用，会自动切换到下一个可用端口，例如 `5174`。
@@ -114,10 +114,10 @@ Redis 相关开关：
 
 - `APP_REDIS_ENABLED=false` 默认关闭
 - 可选覆盖：
-  - `REDIS_HOST`
-  - `REDIS_PORT`
-  - `REDIS_PASSWORD`
-  - `REDIS_DATABASE`
+    - `REDIS_HOST`
+    - `REDIS_PORT`
+    - `REDIS_PASSWORD`
+    - `REDIS_DATABASE`
 
 ### 前端
 
@@ -144,12 +144,12 @@ VITE_ENABLE_MOCK=true
 
 系统内置 4 个默认账号，默认密码统一为 `000000`：
 
-| 身份 | 角色代码 | 登录标识 | 账号 |
-| --- | --- | --- | --- |
-| 超级管理员 | `SUPER_ADMIN` | `SA001` | `superadmin` |
-| 管理员 | `ADMIN` | `A001` | `admin01` |
-| 教师 | `TEACHER` | `T2026001` | `teacher01` |
-| 学生 | `STUDENT` | `20230001` | `student01` |
+| 身份       | 角色代码      | 登录标识   | 账号         |
+| ---------- | ------------- | ---------- | ------------ |
+| 超级管理员 | `SUPER_ADMIN` | `SA001`    | `superadmin` |
+| 管理员     | `ADMIN`       | `A001`     | `admin01`    |
+| 教师       | `TEACHER`     | `T2026001` | `teacher01`  |
+| 学生       | `STUDENT`     | `20230001` | `student01`  |
 
 说明：
 
@@ -248,11 +248,11 @@ JaCoCo 报告输出：
 - `SA001 / 000000` 可真实登录
 - 学生访问受限接口会返回 `403`
 - 核心业务链路已在真实服务上跑通：
-  - 学生预约
-  - 管理员审批
-  - 生成借用记录
-  - 学生取用
-  - 学生归还
+    - 学生预约
+    - 管理员审批
+    - 生成借用记录
+    - 学生取用
+    - 学生归还
 
 ## 数据库修复说明
 
@@ -273,13 +273,13 @@ JaCoCo 报告输出：
 项目文档位于 `md/` 目录：
 
 - PRD：
-  - `md/equipment-borrowing-admin-prd.md`
+    - `md/equipment-borrowing-admin-prd.md`
 - API 文档：
-  - `md/equipment-borrowing-api-doc.md`
+    - `md/equipment-borrowing-api-doc.md`
 - 真实服务验收报告：
-  - `md/real-service-acceptance-2026-03-31.md`
+    - `md/real-service-acceptance-2026-03-31.md`
 - 默认环境人工验收清单：
-  - `md/default-env-manual-acceptance-checklist-2026-03-31.md`
+    - `md/default-env-manual-acceptance-checklist-2026-03-31.md`
 
 ## 常用命令
 

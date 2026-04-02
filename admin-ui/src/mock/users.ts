@@ -175,7 +175,7 @@ function createUser(
     name,
     account,
     loginId,
-    password: '000000',
+    password: '0000',
     roleCode,
     status: 'ENABLED' as const,
     creditScore: 100,

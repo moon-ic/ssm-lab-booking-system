@@ -136,7 +136,7 @@ public class UserService {
         user.setRoleCode(roleCode);
         user.setStatus(UserStatus.ENABLED);
         user.setCreditScore(100);
-        user.setPassword("000000");
+        user.setPassword("0000");
         user.setFirstLoginRequired(true);
         user.setManagerId(managerId);
         authRepository.save(user);

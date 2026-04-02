@@ -8,6 +8,7 @@ import type {
 } from '@/types/auth'
 
 const AUTH_STORAGE_KEY = 'admin-auth-session'
+const TOKEN_STORAGE_KEY = 'token'
 
 interface AuthState {
   session: AuthSession | null
@@ -32,10 +33,12 @@ function readSession(): AuthSession | null {
 function writeSession(session: AuthSession | null) {
   if (!session) {
     localStorage.removeItem(AUTH_STORAGE_KEY)
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
     return
   }
 
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session))
+  localStorage.setItem(TOKEN_STORAGE_KEY, session.token)
 }
 
 const state = reactive<AuthState>({
