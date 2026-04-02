@@ -1,12 +1,11 @@
 <template>
   <section class="forbidden-card">
     <span class="eyebrow">403</span>
-    <h2>Access denied</h2>
+    <h2>无权访问</h2>
     <p>
-      Your current role does not have permission to open this module. The route guard blocked access and kept the
-      rest of the app state intact.
+      当前角色没有进入该模块的权限。路由守卫已拦截本次访问，同时保留了应用其他状态不受影响。
     </p>
-    <RouterLink class="back-link" to="/">Back to dashboard</RouterLink>
+    <RouterLink class="back-link" to="/">返回首页</RouterLink>
   </section>
 </template>
 

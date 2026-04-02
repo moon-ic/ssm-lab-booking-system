@@ -46,7 +46,7 @@ async function submit() {
     form.oldPassword = ''
     form.newPassword = ''
     form.confirmPassword = ''
-    ElMessage.success('密码修改成功，可以继续使用系统')
+    ElMessage.success('密码修改成功，现在可以继续使用系统')
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '密码修改失败')
   } finally {
@@ -68,7 +68,7 @@ async function submit() {
     </template>
 
     <p class="dialog-tip">
-      系统检测到当前账号仍在使用初始密码。根据业务规则，修改成功后才能继续处理后续模块。
+      系统检测到当前账号仍在使用初始密码。根据业务规则，完成密码修改后才能继续访问其他模块。
     </p>
 
     <ElForm ref="formRef" :model="form" :rules="rules" label-position="top">

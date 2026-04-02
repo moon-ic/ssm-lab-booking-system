@@ -13,22 +13,22 @@ const roleCode = computed(() => authStore.state.currentUser?.roleCode ?? authSto
 
 <template>
   <section class="module-card">
-    <span class="eyebrow">Permission Routed</span>
+    <span class="eyebrow">权限路由</span>
     <h2>{{ meta.title }}</h2>
     <p>{{ meta.description }}</p>
 
     <div class="module-grid">
       <article>
-        <strong>Current role</strong>
+        <strong>当前角色</strong>
         <span>{{ roleCode }}</span>
       </article>
       <article>
-        <strong>Route path</strong>
+        <strong>路由路径</strong>
         <span>{{ route.fullPath }}</span>
       </article>
       <article>
-        <strong>Guard mode</strong>
-        <span>meta.roles + first-login restriction</span>
+        <strong>守卫模式</strong>
+        <span>角色元信息 + 首次登录限制</span>
       </article>
     </div>
   </section>

@@ -53,10 +53,27 @@ const canReview = computed(() => currentRole.value === 'SUPER_ADMIN' || currentR
 const statusOptions: ReservationStatus[] = ['PENDING', 'PICKUP_PENDING', 'REJECTED', 'EXPIRED', 'CANCELLED']
 
 const createRules = {
-  deviceId: [{ required: true, message: 'Please select a device', trigger: 'change' }],
-  startTime: [{ required: true, message: 'Please enter start time', trigger: 'blur' }],
-  endTime: [{ required: true, message: 'Please enter end time', trigger: 'blur' }],
-  purpose: [{ required: true, message: 'Please enter purpose', trigger: 'blur' }]
+  deviceId: [{ required: true, message: '请选择设备', trigger: 'change' }],
+  startTime: [{ required: true, message: '请输入开始时间', trigger: 'blur' }],
+  endTime: [{ required: true, message: '请输入结束时间', trigger: 'blur' }],
+  purpose: [{ required: true, message: '请输入用途说明', trigger: 'blur' }]
+}
+
+function reservationStatusLabel(status: ReservationStatus) {
+  switch (status) {
+    case 'PENDING':
+      return '待审核'
+    case 'PICKUP_PENDING':
+      return '待领取'
+    case 'REJECTED':
+      return '已驳回'
+    case 'EXPIRED':
+      return '已过期'
+    case 'CANCELLED':
+      return '已取消'
+    default:
+      return status
+  }
 }
 
 async function loadReservations() {
@@ -67,7 +84,7 @@ async function loadReservations() {
     page.list = data.list
     page.total = data.total
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load reservations')
+    ElMessage.error(error instanceof Error ? error.message : '加载预约记录失败')
   } finally {
     loading.value = false
   }
@@ -113,12 +130,12 @@ async function submitCreate() {
       endTime: createForm.endTime,
       purpose: createForm.purpose
     } satisfies CreateReservationPayload)
-    ElMessage.success('Reservation submitted')
+    ElMessage.success('预约申请已提交')
     createDialogVisible.value = false
     resetCreateForm()
     await loadReservations()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Create failed')
+    ElMessage.error(error instanceof Error ? error.message : '提交失败')
   }
 }
 
@@ -129,7 +146,7 @@ async function openDetail(reservationId: number) {
   try {
     detail.value = await getReservationDetail(reservationId)
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load details')
+    ElMessage.error(error instanceof Error ? error.message : '加载详情失败')
   } finally {
     detailLoading.value = false
   }
@@ -139,11 +156,11 @@ async function handleReview(row: ReservationItem, action: 'APPROVE' | 'REJECT') 
   let comment = ''
 
   if (action === 'REJECT') {
-    comment = await ElMessageBox.prompt('Provide the rejection reason', 'Reject reservation', {
-      confirmButtonText: 'Reject',
-      cancelButtonText: 'Cancel',
+    comment = await ElMessageBox.prompt('请输入驳回原因', '驳回预约', {
+      confirmButtonText: '确认驳回',
+      cancelButtonText: '取消',
       inputPattern: /\S+/,
-      inputErrorMessage: 'Comment is required'
+      inputErrorMessage: '请输入原因'
     }).then((result) => result.value)
   }
 
@@ -152,31 +169,31 @@ async function handleReview(row: ReservationItem, action: 'APPROVE' | 'REJECT') 
       action,
       comment
     } satisfies ApproveReservationPayload)
-    ElMessage.success(action === 'APPROVE' ? 'Reservation approved' : 'Reservation rejected')
+    ElMessage.success(action === 'APPROVE' ? '预约已通过' : '预约已驳回')
     await loadReservations()
   } catch (error) {
     if (error === 'cancel') {
       return
     }
-    ElMessage.error(error instanceof Error ? error.message : 'Review failed')
+    ElMessage.error(error instanceof Error ? error.message : '审核失败')
   }
 }
 
 async function handleCancel(row: ReservationItem) {
   try {
-    await ElMessageBox.confirm('Cancel this pending reservation?', 'Cancel reservation', {
-      confirmButtonText: 'Cancel reservation',
-      cancelButtonText: 'Back',
+    await ElMessageBox.confirm('确认取消这条待审核预约吗？', '取消预约', {
+      confirmButtonText: '确认取消',
+      cancelButtonText: '返回',
       type: 'warning'
     })
     await cancelReservation(row.reservationId)
-    ElMessage.success('Reservation cancelled')
+    ElMessage.success('预约已取消')
     await loadReservations()
   } catch (error) {
     if (error === 'cancel') {
       return
     }
-    ElMessage.error(error instanceof Error ? error.message : 'Cancel failed')
+    ElMessage.error(error instanceof Error ? error.message : '取消失败')
   }
 }
 
@@ -188,53 +205,52 @@ onMounted(() => {
 <template>
   <div class="reservation-page">
     <section class="hero-card">
-      <span class="eyebrow">Reservation Module</span>
-      <h2>Reservation requests and approval workflow</h2>
+      <span class="eyebrow">预约模块</span>
+      <h2>预约申请与审批流程</h2>
       <p>
-        Students can submit reservations, while admin and teacher roles can review visible requests. The page follows
-        the backend status flow from pending to pickup pending or rejected.
+        学生可以提交预约，管理员和教师可以审核自己可见范围内的申请。页面状态流与后端保持一致。
       </p>
     </section>
 
     <section class="toolbar-card">
       <div class="filter-grid">
-        <ElSelect v-model="filters.status" placeholder="Reservation status" clearable>
-          <ElOption v-for="status in statusOptions" :key="status" :label="status" :value="status" />
+        <ElSelect v-model="filters.status" placeholder="预约状态" clearable>
+          <ElOption v-for="status in statusOptions" :key="status" :label="reservationStatusLabel(status)" :value="status" />
         </ElSelect>
       </div>
 
       <div class="toolbar-actions">
-        <ElButton @click="handleReset">Reset</ElButton>
-        <ElButton type="primary" @click="handleSearch">Search</ElButton>
-        <ElButton v-if="canCreate" type="success" @click="createDialogVisible = true">Create Reservation</ElButton>
+        <ElButton @click="handleReset">重置</ElButton>
+        <ElButton type="primary" @click="handleSearch">查询</ElButton>
+        <ElButton v-if="canCreate" type="success" @click="createDialogVisible = true">发起预约</ElButton>
       </div>
     </section>
 
     <section class="table-card">
       <ElTable :data="page.list" v-loading="loading" width="100%">
-        <ElTableColumn prop="deviceName" label="Device" min-width="180" />
-        <ElTableColumn prop="applicantName" label="Applicant" min-width="140" />
-        <ElTableColumn prop="startTime" label="Start Time" min-width="160" />
-        <ElTableColumn prop="endTime" label="End Time" min-width="160" />
-        <ElTableColumn prop="status" label="Status" min-width="140">
+        <ElTableColumn prop="deviceName" label="设备" min-width="180" />
+        <ElTableColumn prop="applicantName" label="申请人" min-width="140" />
+        <ElTableColumn prop="startTime" label="开始时间" min-width="160" />
+        <ElTableColumn prop="endTime" label="结束时间" min-width="160" />
+        <ElTableColumn prop="status" label="状态" min-width="140">
           <template #default="{ row }">
             <ElTag :type="row.status === 'PENDING' ? 'warning' : row.status === 'PICKUP_PENDING' ? 'success' : 'info'">
-              {{ row.status }}
+              {{ reservationStatusLabel(row.status) }}
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="purpose" label="Purpose" min-width="220" />
-        <ElTableColumn label="Actions" min-width="280" fixed="right">
+        <ElTableColumn prop="purpose" label="用途" min-width="220" />
+        <ElTableColumn label="操作" min-width="280" fixed="right">
           <template #default="{ row }">
             <div class="action-row">
-              <ElButton link type="primary" @click="openDetail(row.reservationId)">Detail</ElButton>
+              <ElButton link type="primary" @click="openDetail(row.reservationId)">详情</ElButton>
               <ElButton
                 v-if="canReview && row.status === 'PENDING'"
                 link
                 type="success"
                 @click="handleReview(row, 'APPROVE')"
               >
-                Approve
+                通过
               </ElButton>
               <ElButton
                 v-if="canReview && row.status === 'PENDING'"
@@ -242,7 +258,7 @@ onMounted(() => {
                 type="danger"
                 @click="handleReview(row, 'REJECT')"
               >
-                Reject
+                驳回
               </ElButton>
               <ElButton
                 v-if="currentRole === 'STUDENT' && row.status === 'PENDING'"
@@ -250,7 +266,7 @@ onMounted(() => {
                 type="warning"
                 @click="handleCancel(row)"
               >
-                Cancel
+                取消
               </ElButton>
             </div>
           </template>
@@ -269,40 +285,40 @@ onMounted(() => {
       </div>
     </section>
 
-    <ElDialog v-model="createDialogVisible" title="Create Reservation" width="520px" @closed="resetCreateForm">
+    <ElDialog v-model="createDialogVisible" title="发起预约" width="520px" @closed="resetCreateForm">
       <ElForm ref="createFormRef" :model="createForm" :rules="createRules" label-position="top">
-        <ElFormItem label="Device" prop="deviceId">
-          <ElSelect v-model="createForm.deviceId" placeholder="Select available device">
+        <ElFormItem label="设备" prop="deviceId">
+          <ElSelect v-model="createForm.deviceId" placeholder="请选择可预约设备">
             <ElOption v-for="device in devices" :key="device.deviceId" :label="`${device.deviceName} / ${device.deviceCode}`" :value="device.deviceId" />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem label="Start Time" prop="startTime">
+        <ElFormItem label="开始时间" prop="startTime">
           <ElInput v-model="createForm.startTime" placeholder="YYYY-MM-DD HH:mm:ss" />
         </ElFormItem>
-        <ElFormItem label="End Time" prop="endTime">
+        <ElFormItem label="结束时间" prop="endTime">
           <ElInput v-model="createForm.endTime" placeholder="YYYY-MM-DD HH:mm:ss" />
         </ElFormItem>
-        <ElFormItem label="Purpose" prop="purpose">
-          <ElInput v-model="createForm.purpose" type="textarea" :rows="3" placeholder="Describe the purpose" />
+        <ElFormItem label="用途说明" prop="purpose">
+          <ElInput v-model="createForm.purpose" type="textarea" :rows="3" placeholder="请填写预约用途" />
         </ElFormItem>
       </ElForm>
       <template #footer>
-        <ElButton @click="createDialogVisible = false">Cancel</ElButton>
-        <ElButton type="primary" @click="submitCreate">Submit</ElButton>
+        <ElButton @click="createDialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="submitCreate">提交</ElButton>
       </template>
     </ElDialog>
 
-    <ElDialog v-model="detailDialogVisible" title="Reservation Detail" width="560px">
+    <ElDialog v-model="detailDialogVisible" title="预约详情" width="560px">
       <ElSkeleton v-if="detailLoading" :rows="7" animated />
       <div v-else-if="detail" class="detail-grid">
-        <article><strong>Device</strong><span>{{ detail.deviceName }}</span></article>
-        <article><strong>Applicant</strong><span>{{ detail.applicantName }}</span></article>
-        <article><strong>Start</strong><span>{{ detail.startTime }}</span></article>
-        <article><strong>End</strong><span>{{ detail.endTime }}</span></article>
-        <article><strong>Status</strong><span>{{ detail.status }}</span></article>
-        <article><strong>Created At</strong><span>{{ detail.createdAt || '--' }}</span></article>
-        <article class="full-width"><strong>Purpose</strong><span>{{ detail.purpose }}</span></article>
-        <article class="full-width"><strong>Review Comment</strong><span>{{ detail.reviewComment || '--' }}</span></article>
+        <article><strong>设备</strong><span>{{ detail.deviceName }}</span></article>
+        <article><strong>申请人</strong><span>{{ detail.applicantName }}</span></article>
+        <article><strong>开始时间</strong><span>{{ detail.startTime }}</span></article>
+        <article><strong>结束时间</strong><span>{{ detail.endTime }}</span></article>
+        <article><strong>状态</strong><span>{{ reservationStatusLabel(detail.status) }}</span></article>
+        <article><strong>创建时间</strong><span>{{ detail.createdAt || '--' }}</span></article>
+        <article class="full-width"><strong>用途说明</strong><span>{{ detail.purpose }}</span></article>
+        <article class="full-width"><strong>审核备注</strong><span>{{ detail.reviewComment || '--' }}</span></article>
       </div>
     </ElDialog>
   </div>

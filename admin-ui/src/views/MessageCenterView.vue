@@ -34,7 +34,26 @@ const messageTypeOptions: NotificationType[] = [
 ]
 
 function messageTypeLabel(type: NotificationType) {
-  return type.split('_').join(' ')
+  switch (type) {
+    case 'FIRST_LOGIN_PASSWORD_CHANGE':
+      return '首次登录改密提醒'
+    case 'PASSWORD_RESET':
+      return '密码重置通知'
+    case 'RESERVATION_EXPIRED':
+      return '预约已过期'
+    case 'BORROW_OVERDUE':
+      return '借用逾期'
+    case 'ABOUT_TO_EXPIRE_REMINDER':
+      return '即将到期提醒'
+    case 'OVERDUE_REMINDER':
+      return '逾期提醒'
+    default:
+      return type
+  }
+}
+
+function confirmStatusLabel(status: 'UNCONFIRMED' | 'CONFIRMED') {
+  return status === 'CONFIRMED' ? '已确认' : '未确认'
 }
 
 async function loadMessages() {
@@ -49,7 +68,7 @@ async function loadMessages() {
     total.value = messageResult.total
     summary.value = summaryResult
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load messages')
+    ElMessage.error(error instanceof Error ? error.message : '加载消息失败')
   } finally {
     loading.value = false
   }
@@ -71,10 +90,10 @@ function handleReset() {
 async function handleConfirm(messageId: number) {
   try {
     await confirmMessage(messageId)
-    ElMessage.success('Message confirmed')
+    ElMessage.success('消息已确认')
     await loadMessages()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Confirm failed')
+    ElMessage.error(error instanceof Error ? error.message : '确认失败')
   }
 }
 
@@ -86,48 +105,47 @@ onMounted(() => {
 <template>
   <div class="message-page">
     <section class="hero-card">
-      <span class="eyebrow">Message Module</span>
-      <h2>Notification center and confirmation workflow</h2>
+      <span class="eyebrow">消息模块</span>
+      <h2>通知中心与确认流程</h2>
       <p>
-        This page provides a dedicated message workbench for staff roles, including unread summary, filtering, and
-        one-click confirmation.
+        该页面为工作人员角色提供统一消息工作台，支持未确认汇总、条件筛选和一键确认。
       </p>
     </section>
 
     <section v-if="summary" class="summary-grid">
       <article class="summary-card">
         <strong>{{ summary.total }}</strong>
-        <span>Total unconfirmed</span>
+        <span>未确认总数</span>
       </article>
       <article class="summary-card">
         <strong>{{ summary.aboutToExpireCount }}</strong>
-        <span>About to expire</span>
+        <span>即将到期</span>
       </article>
       <article class="summary-card">
         <strong>{{ summary.overdueCount }}</strong>
-        <span>Overdue</span>
+        <span>已逾期</span>
       </article>
       <article class="summary-card">
         <strong>{{ summary.firstLoginCount }}</strong>
-        <span>First login alerts</span>
+        <span>首次登录提醒</span>
       </article>
     </section>
 
     <section class="toolbar-card">
       <div class="filter-grid">
-        <ElInput v-if="showUserFilter" v-model.number="query.userId" placeholder="Filter by user ID" clearable />
-        <ElSelect v-model="query.type" placeholder="Message type" clearable>
+        <ElInput v-if="showUserFilter" v-model.number="query.userId" placeholder="按用户 ID 筛选" clearable />
+        <ElSelect v-model="query.type" placeholder="消息类型" clearable>
           <ElOption v-for="type in messageTypeOptions" :key="type" :label="messageTypeLabel(type)" :value="type" />
         </ElSelect>
-        <ElSelect v-model="query.confirmStatus" placeholder="Confirm status" clearable>
-          <ElOption label="Unconfirmed" value="UNCONFIRMED" />
-          <ElOption label="Confirmed" value="CONFIRMED" />
+        <ElSelect v-model="query.confirmStatus" placeholder="确认状态" clearable>
+          <ElOption label="未确认" value="UNCONFIRMED" />
+          <ElOption label="已确认" value="CONFIRMED" />
         </ElSelect>
       </div>
 
       <div class="toolbar-actions">
-        <ElButton @click="handleReset">Reset</ElButton>
-        <ElButton type="primary" @click="handleSearch">Search</ElButton>
+        <ElButton @click="handleReset">重置</ElButton>
+        <ElButton type="primary" @click="handleSearch">查询</ElButton>
       </div>
     </section>
 
@@ -140,7 +158,7 @@ onMounted(() => {
               <span>{{ messageTypeLabel(message.type) }}</span>
             </div>
             <ElTag :type="message.confirmStatus === 'CONFIRMED' ? 'success' : 'warning'">
-              {{ message.confirmStatus }}
+              {{ confirmStatusLabel(message.confirmStatus) }}
             </ElTag>
           </div>
           <p>{{ message.content }}</p>
@@ -152,7 +170,7 @@ onMounted(() => {
               link
               @click="handleConfirm(message.messageId)"
             >
-              Confirm
+              确认
             </ElButton>
           </div>
         </article>

@@ -27,29 +27,29 @@ const saveForm = reactive<UpdateMenuConfigPayload & { menuId?: number }>({
 })
 
 const saveRules = {
-  menuName: [{ required: true, message: 'Please enter menu name', trigger: 'blur' }],
-  path: [{ required: true, message: 'Please enter route path', trigger: 'blur' }],
-  icon: [{ required: true, message: 'Please choose an icon', trigger: 'change' }],
-  permissionCode: [{ required: true, message: 'Please choose a permission code', trigger: 'change' }]
+  menuName: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
+  path: [{ required: true, message: '请输入路由路径', trigger: 'blur' }],
+  icon: [{ required: true, message: '请选择图标', trigger: 'change' }],
+  permissionCode: [{ required: true, message: '请选择权限编码', trigger: 'change' }]
 }
 
 const permissionOptions = computed(() => permissions.value.filter((item) => item.type === 'ACTION'))
 
 const summaryCards = computed(() => [
   {
-    title: 'Menus',
+    title: '菜单',
     value: menus.value.length,
-    description: 'Configurable menu entries currently registered.'
+    description: '当前已登记的可配置菜单项。'
   },
   {
-    title: 'Icons',
+    title: '图标',
     value: icons.value.length,
-    description: 'Built-in icon names available for menu configuration.'
+    description: '可用于菜单配置的内置图标名称。'
   },
   {
-    title: 'Permission codes',
+    title: '权限编码',
     value: permissionOptions.value.length,
-    description: 'Action codes that can be linked to a menu item.'
+    description: '可与菜单项绑定的操作权限编码。'
   }
 ])
 
@@ -71,7 +71,7 @@ async function loadInitialData() {
       await selectMenu(menuList[0].menuId)
     }
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load menu configuration')
+    ElMessage.error(error instanceof Error ? error.message : '加载菜单配置失败')
   } finally {
     loading.value = false
   }
@@ -115,9 +115,9 @@ async function submitSave() {
     menus.value = menus.value.map((item) => (item.menuId === updated.menuId ? updated : item))
     selectedMenu.value = updated
     saveDialogVisible.value = false
-    ElMessage.success('Menu configuration updated')
+    ElMessage.success('菜单配置已更新')
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Save failed')
+    ElMessage.error(error instanceof Error ? error.message : '保存失败')
   }
 }
 
@@ -129,11 +129,10 @@ onMounted(() => {
 <template>
   <div class="menu-config-page">
     <section class="hero-card">
-      <span class="eyebrow">Menu Module</span>
-      <h2>Menu and icon configuration</h2>
+      <span class="eyebrow">菜单模块</span>
+      <h2>菜单与图标配置</h2>
       <p>
-        This page mirrors the backend menu-config contract for super admins: inspect registered menus, choose built-in
-        icons, and keep menu titles, paths, and permission codes aligned.
+        该页面面向超级管理员，用于查看已登记菜单、选择内置图标，并维护菜单标题、路径与权限编码。
       </p>
     </section>
 
@@ -149,8 +148,8 @@ onMounted(() => {
       <article class="menu-list-card">
         <div class="card-header">
           <div>
-            <h3>Menu Registry</h3>
-            <p>{{ menus.length }} configured entries</p>
+            <h3>菜单列表</h3>
+            <p>共 {{ menus.length }} 个配置项</p>
           </div>
         </div>
 
@@ -176,11 +175,11 @@ onMounted(() => {
       <article class="menu-detail-card">
         <div class="card-header">
           <div>
-            <h3>Menu Detail</h3>
+            <h3>菜单详情</h3>
             <p v-if="selectedMenu">ID {{ selectedMenu.menuId }}</p>
           </div>
           <ElButton type="primary" :disabled="!selectedMenu" @click="selectedMenu && openEditDialog(selectedMenu)">
-            Edit Menu
+            编辑菜单
           </ElButton>
         </div>
 
@@ -188,25 +187,25 @@ onMounted(() => {
         <template v-else-if="selectedMenu">
           <div class="detail-grid">
             <article>
-              <strong>Menu name</strong>
+              <strong>菜单名称</strong>
               <span>{{ selectedMenu.menuName }}</span>
             </article>
             <article>
-              <strong>Route path</strong>
+              <strong>路由路径</strong>
               <span>{{ selectedMenu.path }}</span>
             </article>
             <article>
-              <strong>Icon</strong>
+              <strong>图标</strong>
               <span>{{ selectedMenu.icon }}</span>
             </article>
             <article>
-              <strong>Permission code</strong>
+              <strong>权限编码</strong>
               <span>{{ selectedMenu.permissionCode }}</span>
             </article>
           </div>
 
           <div class="preview-block">
-            <h4>Preview</h4>
+            <h4>预览</h4>
             <div class="preview-card">
               <ElTag>{{ selectedMenu.icon }}</ElTag>
               <div>
@@ -218,7 +217,7 @@ onMounted(() => {
 
           <div class="options-grid">
             <section class="option-panel">
-              <h4>Available icons</h4>
+              <h4>可选图标</h4>
               <div class="chip-list">
                 <ElTag v-for="icon in icons" :key="icon" :type="icon === selectedMenu.icon ? 'primary' : 'info'">
                   {{ icon }}
@@ -227,7 +226,7 @@ onMounted(() => {
             </section>
 
             <section class="option-panel">
-              <h4>Available permission codes</h4>
+              <h4>可选权限编码</h4>
               <div class="chip-list">
                 <ElTag
                   v-for="permission in permissionOptions"
@@ -243,21 +242,21 @@ onMounted(() => {
       </article>
     </section>
 
-    <ElDialog v-model="saveDialogVisible" title="Edit Menu Configuration" width="520px">
+    <ElDialog v-model="saveDialogVisible" title="编辑菜单配置" width="520px">
       <ElForm ref="saveFormRef" :model="saveForm" :rules="saveRules" label-position="top">
-        <ElFormItem label="Menu Name" prop="menuName">
-          <ElInput v-model="saveForm.menuName" placeholder="Enter menu name" />
+        <ElFormItem label="菜单名称" prop="menuName">
+          <ElInput v-model="saveForm.menuName" placeholder="请输入菜单名称" />
         </ElFormItem>
-        <ElFormItem label="Route Path" prop="path">
-          <ElInput v-model="saveForm.path" placeholder="Enter route path" />
+        <ElFormItem label="路由路径" prop="path">
+          <ElInput v-model="saveForm.path" placeholder="请输入路由路径" />
         </ElFormItem>
-        <ElFormItem label="Icon" prop="icon">
-          <ElSelect v-model="saveForm.icon" filterable placeholder="Choose built-in icon">
+        <ElFormItem label="图标" prop="icon">
+          <ElSelect v-model="saveForm.icon" filterable placeholder="请选择内置图标">
             <ElOption v-for="icon in icons" :key="icon" :label="icon" :value="icon" />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem label="Permission Code" prop="permissionCode">
-          <ElSelect v-model="saveForm.permissionCode" filterable placeholder="Choose permission code">
+        <ElFormItem label="权限编码" prop="permissionCode">
+          <ElSelect v-model="saveForm.permissionCode" filterable placeholder="请选择权限编码">
             <ElOption
               v-for="permission in permissionOptions"
               :key="permission.permissionId"
@@ -268,8 +267,8 @@ onMounted(() => {
         </ElFormItem>
       </ElForm>
       <template #footer>
-        <ElButton @click="saveDialogVisible = false">Cancel</ElButton>
-        <ElButton type="primary" @click="submitSave">Save</ElButton>
+        <ElButton @click="saveDialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="submitSave">保存</ElButton>
       </template>
     </ElDialog>
   </div>

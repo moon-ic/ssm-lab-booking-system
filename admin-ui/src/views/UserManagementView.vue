@@ -55,9 +55,9 @@ const currentRole = computed(() => (authStore.state.currentUser?.roleCode ?? aut
 
 const roleOptions = computed(() => {
   const base = [
-    { label: 'Admin', value: 'ADMIN' },
-    { label: 'Teacher', value: 'TEACHER' },
-    { label: 'Student', value: 'STUDENT' }
+    { label: '管理员', value: 'ADMIN' },
+    { label: '教师', value: 'TEACHER' },
+    { label: '学生', value: 'STUDENT' }
   ] as const
 
   switch (currentRole.value) {
@@ -88,25 +88,29 @@ const filterRoleOptions = computed(() => {
 })
 
 const createRules = {
-  name: [{ required: true, message: 'Please enter a name', trigger: 'blur' }],
-  account: [{ required: true, message: 'Please enter an account or ID', trigger: 'blur' }]
+  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  account: [{ required: true, message: '请输入账号或编号', trigger: 'blur' }]
 }
 
 function createFieldLabel(roleCode: UserRoleCode) {
   if (roleCode === 'ADMIN') {
-    return 'Account'
+    return '账号'
   }
   if (roleCode === 'TEACHER') {
-    return 'Job number'
+    return '工号'
   }
-  return 'Student number'
+  return '学号'
 }
 
 function createRoleLabel(roleCode: UserRoleCode) {
-  if (roleCode === 'SUPER_ADMIN') return 'Super Admin'
-  if (roleCode === 'ADMIN') return 'Admin'
-  if (roleCode === 'TEACHER') return 'Teacher'
-  return 'Student'
+  if (roleCode === 'SUPER_ADMIN') return '超级管理员'
+  if (roleCode === 'ADMIN') return '管理员'
+  if (roleCode === 'TEACHER') return '教师'
+  return '学生'
+}
+
+function createStatusLabel(status: UserStatus) {
+  return status === 'ENABLED' ? '启用' : '停用'
 }
 
 function resetCreateForm() {
@@ -123,7 +127,7 @@ async function loadUsers() {
     page.list = data.list
     page.total = data.total
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load users')
+    ElMessage.error(error instanceof Error ? error.message : '加载用户列表失败')
   } finally {
     loading.value = false
   }
@@ -149,7 +153,7 @@ async function openDetail(userId: number) {
   try {
     detail.value = await getUserDetail(userId)
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load details')
+    ElMessage.error(error instanceof Error ? error.message : '加载详情失败')
   } finally {
     detailLoading.value = false
   }
@@ -179,22 +183,22 @@ async function submitCreate() {
       } satisfies CreateStudentPayload)
     }
 
-    ElMessage.success(`${createRoleLabel(selectedCreateRole.value)} created with default password 0000`)
+    ElMessage.success(`${createRoleLabel(selectedCreateRole.value)}创建成功，初始密码为 0000`)
     createDialogVisible.value = false
     resetCreateForm()
     await loadUsers()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Create failed')
+    ElMessage.error(error instanceof Error ? error.message : '创建失败')
   }
 }
 
 async function handleStatusChange(row: UserListItem, status: UserStatus) {
   try {
     await updateUserStatus(row.userId, { status })
-    ElMessage.success('User status updated')
+    ElMessage.success('用户状态已更新')
     await loadUsers()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Status update failed')
+    ElMessage.error(error instanceof Error ? error.message : '状态更新失败')
   }
 }
 
@@ -202,41 +206,41 @@ async function handleResetPassword(row: UserListItem) {
   try {
     await ElMessageBox.confirm(
       `Reset ${row.name}'s password to 0000 and require password change on next login?`,
-      'Reset password',
+      '重置密码',
       {
-        confirmButtonText: 'Reset',
-        cancelButtonText: 'Cancel',
+        confirmButtonText: '确认重置',
+        cancelButtonText: '取消',
         type: 'warning'
       }
     )
 
     await resetPassword(row.userId, { newPassword: '0000' } satisfies ResetPasswordPayload)
-    ElMessage.success('Password reset completed')
+    ElMessage.success('密码重置成功')
     await loadUsers()
   } catch (error) {
     if (error === 'cancel') {
       return
     }
-    ElMessage.error(error instanceof Error ? error.message : 'Password reset failed')
+    ElMessage.error(error instanceof Error ? error.message : '密码重置失败')
   }
 }
 
 async function handleDeleteStudent(row: UserListItem) {
   try {
-    await ElMessageBox.confirm(`Delete ${row.name}? This only applies to student accounts.`, 'Delete student', {
-      confirmButtonText: 'Delete',
-      cancelButtonText: 'Cancel',
+    await ElMessageBox.confirm(`确认删除 ${row.name} 吗？该操作仅适用于学生账号。`, '删除学生', {
+      confirmButtonText: '确认删除',
+      cancelButtonText: '取消',
       type: 'warning'
     })
 
     await deleteStudent(row.userId)
-    ElMessage.success('Student deleted')
+    ElMessage.success('学生账号已删除')
     await loadUsers()
   } catch (error) {
     if (error === 'cancel') {
       return
     }
-    ElMessage.error(error instanceof Error ? error.message : 'Delete failed')
+    ElMessage.error(error instanceof Error ? error.message : '删除失败')
   }
 }
 
@@ -259,72 +263,71 @@ onMounted(() => {
 <template>
   <div class="user-page">
     <section class="hero-card">
-      <span class="eyebrow">User Module</span>
-      <h2>Manage visible accounts by role</h2>
+      <span class="eyebrow">用户模块</span>
+      <h2>按角色管理可见账号</h2>
       <p>
-        This module follows the PRD access rules: super admin manages admins, admin manages teachers, and teacher
-        manages owned students.
+        本模块遵循 PRD 的权限规则：超级管理员管理管理员，管理员管理教师，教师管理自己名下的学生。
       </p>
     </section>
 
     <section class="toolbar-card">
       <div class="filter-grid">
-        <ElInput v-model="filters.keyword" placeholder="Search by name, account, or login ID" clearable @keyup.enter="handleSearch" />
-        <ElSelect v-model="filters.roleCode" placeholder="Role" clearable>
+        <ElInput v-model="filters.keyword" placeholder="按姓名、账号或登录编号搜索" clearable @keyup.enter="handleSearch" />
+        <ElSelect v-model="filters.roleCode" placeholder="角色" clearable>
           <ElOption v-for="role in filterRoleOptions" :key="role" :label="createRoleLabel(role)" :value="role" />
         </ElSelect>
-        <ElSelect v-model="filters.status" placeholder="Status" clearable>
-          <ElOption label="Enabled" value="ENABLED" />
-          <ElOption label="Disabled" value="DISABLED" />
+        <ElSelect v-model="filters.status" placeholder="状态" clearable>
+          <ElOption label="启用" value="ENABLED" />
+          <ElOption label="停用" value="DISABLED" />
         </ElSelect>
       </div>
 
       <div class="toolbar-actions">
-        <ElButton @click="handleReset">Reset</ElButton>
-        <ElButton type="primary" @click="handleSearch">Search</ElButton>
-        <ElButton v-if="roleOptions.length" type="success" @click="createDialogVisible = true">Create User</ElButton>
+        <ElButton @click="handleReset">重置</ElButton>
+        <ElButton type="primary" @click="handleSearch">查询</ElButton>
+        <ElButton v-if="roleOptions.length" type="success" @click="createDialogVisible = true">新增用户</ElButton>
       </div>
     </section>
 
     <section class="table-card">
       <ElTable :data="page.list" v-loading="loading" width="100%">
-        <ElTableColumn prop="name" label="Name" min-width="140" />
-        <ElTableColumn prop="account" label="Account" min-width="140" />
-        <ElTableColumn prop="jobNoOrStudentNo" label="Login ID" min-width="140" />
-        <ElTableColumn prop="roleCode" label="Role" min-width="120">
+        <ElTableColumn prop="name" label="姓名" min-width="140" />
+        <ElTableColumn prop="account" label="账号" min-width="140" />
+        <ElTableColumn prop="jobNoOrStudentNo" label="登录编号" min-width="140" />
+        <ElTableColumn prop="roleCode" label="角色" min-width="120">
           <template #default="{ row }">
             <ElTag>{{ createRoleLabel(row.roleCode) }}</ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="status" label="Status" min-width="120">
+        <ElTableColumn prop="status" label="状态" min-width="120">
           <template #default="{ row }">
             <ElTag :type="row.status === 'ENABLED' ? 'success' : 'info'">
-              {{ row.status }}
+              {{ createStatusLabel(row.status) }}
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="creditScore" label="Credit" min-width="100" />
-        <ElTableColumn prop="firstLoginRequired" label="First Login" min-width="120">
+        <ElTableColumn prop="creditScore" label="信用分" min-width="100" />
+        <ElTableColumn prop="firstLoginRequired" label="首次登录" min-width="120">
           <template #default="{ row }">
             <ElTag :type="row.firstLoginRequired ? 'warning' : 'success'">
-              {{ row.firstLoginRequired ? 'Required' : 'Done' }}
+              {{ row.firstLoginRequired ? '待改密' : '已完成' }}
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn label="Actions" min-width="300" fixed="right">
+        <ElTableColumn label="操作" min-width="300" fixed="right">
           <template #default="{ row }">
             <div class="action-row">
-              <ElButton link type="primary" @click="openDetail(row.userId)">Detail</ElButton>
+              <ElButton link type="primary" @click="openDetail(row.userId)">详情</ElButton>
               <ElButton
                 v-if="canManageStatus()"
                 link
                 type="warning"
                 @click="handleStatusChange(row, row.status === 'ENABLED' ? 'DISABLED' : 'ENABLED')"
               >
-                {{ row.status === 'ENABLED' ? 'Disable' : 'Enable' }}
+                {{ row.status === 'ENABLED' ? '停用' : '启用' }}
               </ElButton>
-              <ElButton v-if="canManageStatus()" link type="danger" @click="handleResetPassword(row)">Reset Password</ElButton>
-              <ElButton v-if="canDeleteStudent(row)" link type="danger" @click="handleDeleteStudent(row)">Delete</ElButton>
+              <ElButton v-if="canManageStatus()" link type="danger" @click="handleResetPassword(row)">重置密码</ElButton>
+              <ElButton v-if="canDeleteStudent(row)" link type="danger" @click="handleDeleteStudent(row)">删除</ElButton>
             </div>
           </template>
         </ElTableColumn>
@@ -342,65 +345,65 @@ onMounted(() => {
       </div>
     </section>
 
-    <ElDialog v-model="createDialogVisible" title="Create User" width="460px" @closed="resetCreateForm">
+    <ElDialog v-model="createDialogVisible" title="新增用户" width="460px" @closed="resetCreateForm">
       <ElForm ref="createFormRef" :model="createForm" :rules="createRules" label-position="top">
-        <ElFormItem label="Role">
+        <ElFormItem label="角色">
           <ElRadioGroup v-model="selectedCreateRole">
             <ElRadioButton v-for="role in roleOptions" :key="role.value" :label="role.value">
               {{ role.label }}
             </ElRadioButton>
           </ElRadioGroup>
         </ElFormItem>
-        <ElFormItem label="Name" prop="name">
-          <ElInput v-model="createForm.name" placeholder="Enter name" />
+        <ElFormItem label="姓名" prop="name">
+          <ElInput v-model="createForm.name" placeholder="请输入姓名" />
         </ElFormItem>
         <ElFormItem :label="createFieldLabel(selectedCreateRole)" prop="account">
-          <ElInput v-model="createForm.account" :placeholder="`Enter ${createFieldLabel(selectedCreateRole).toLowerCase()}`" />
+          <ElInput v-model="createForm.account" :placeholder="`请输入${createFieldLabel(selectedCreateRole)}`" />
         </ElFormItem>
-        <ElFormItem label="Phone">
-          <ElInput v-model="createForm.phone" placeholder="Optional phone number" />
+        <ElFormItem label="手机号">
+          <ElInput v-model="createForm.phone" placeholder="选填手机号" />
         </ElFormItem>
       </ElForm>
       <template #footer>
-        <ElButton @click="createDialogVisible = false">Cancel</ElButton>
-        <ElButton type="primary" @click="submitCreate">Create</ElButton>
+        <ElButton @click="createDialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="submitCreate">创建</ElButton>
       </template>
     </ElDialog>
 
-    <ElDialog v-model="detailDialogVisible" title="User Detail" width="520px">
+    <ElDialog v-model="detailDialogVisible" title="用户详情" width="520px">
       <ElSkeleton v-if="detailLoading" :rows="6" animated />
       <div v-else-if="detail" class="detail-grid">
         <article>
-          <strong>Name</strong>
+          <strong>姓名</strong>
           <span>{{ detail.name }}</span>
         </article>
         <article>
-          <strong>Account</strong>
+          <strong>账号</strong>
           <span>{{ detail.account }}</span>
         </article>
         <article>
-          <strong>Login ID</strong>
+          <strong>登录编号</strong>
           <span>{{ detail.jobNoOrStudentNo }}</span>
         </article>
         <article>
-          <strong>Role</strong>
+          <strong>角色</strong>
           <span>{{ createRoleLabel(detail.roleCode) }}</span>
         </article>
         <article>
-          <strong>Status</strong>
-          <span>{{ detail.status }}</span>
+          <strong>状态</strong>
+          <span>{{ createStatusLabel(detail.status) }}</span>
         </article>
         <article>
-          <strong>Phone</strong>
+          <strong>手机号</strong>
           <span>{{ detail.phone || '--' }}</span>
         </article>
         <article>
-          <strong>Credit</strong>
+          <strong>信用分</strong>
           <span>{{ detail.creditScore }}</span>
         </article>
         <article>
-          <strong>First login</strong>
-          <span>{{ detail.firstLoginRequired ? 'Password change pending' : 'Completed' }}</span>
+          <strong>首次登录</strong>
+          <span>{{ detail.firstLoginRequired ? '待修改密码' : '已完成' }}</span>
         </article>
       </div>
     </ElDialog>

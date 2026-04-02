@@ -44,6 +44,25 @@ const isStudent = computed(() => currentRole.value === 'STUDENT')
 const isAdmin = computed(() => currentRole.value === 'SUPER_ADMIN' || currentRole.value === 'ADMIN')
 const statusOptions: BorrowStatus[] = ['PICKUP_PENDING', 'BORROWING', 'RETURNED', 'OVERDUE']
 
+function borrowStatusLabel(status: BorrowStatus) {
+  switch (status) {
+    case 'PICKUP_PENDING':
+      return '待领取'
+    case 'BORROWING':
+      return '借用中'
+    case 'RETURNED':
+      return '已归还'
+    case 'OVERDUE':
+      return '已逾期'
+    default:
+      return status
+  }
+}
+
+function deviceConditionLabel(condition: string) {
+  return condition === 'DAMAGED' ? '损坏' : '正常'
+}
+
 async function loadRecords() {
   loading.value = true
 
@@ -52,7 +71,7 @@ async function loadRecords() {
     page.list = data.list
     page.total = data.total
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load borrow records')
+    ElMessage.error(error instanceof Error ? error.message : '加载借用记录失败')
   } finally {
     loading.value = false
   }
@@ -91,11 +110,11 @@ async function submitPickup() {
     await pickupBorrowRecord(currentRecord.value.recordId, {
       pickupTime: pickupForm.pickupTime
     })
-    ElMessage.success('Pickup confirmed')
+    ElMessage.success('已确认领取')
     pickupDialogVisible.value = false
     await loadRecords()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Pickup failed')
+    ElMessage.error(error instanceof Error ? error.message : '确认领取失败')
   }
 }
 
@@ -109,21 +128,21 @@ async function submitReturn() {
       returnTime: returnForm.returnTime,
       deviceCondition: returnForm.deviceCondition
     })
-    ElMessage.success('Return confirmed')
+    ElMessage.success('已确认归还')
     returnDialogVisible.value = false
     await loadRecords()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Return failed')
+    ElMessage.error(error instanceof Error ? error.message : '确认归还失败')
   }
 }
 
 async function handleMarkOverdue(row: BorrowRecordItem) {
   try {
     await markBorrowRecordOverdue(row.recordId)
-    ElMessage.success('Record marked overdue')
+    ElMessage.success('记录已标记为逾期')
     await loadRecords()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Update failed')
+    ElMessage.error(error instanceof Error ? error.message : '更新失败')
   }
 }
 
@@ -132,7 +151,7 @@ async function openReminders(type: 'ABOUT_TO_EXPIRE' | 'OVERDUE') {
     reminders.value = await listBorrowReminders(type)
     reminderDrawerVisible.value = true
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load reminders')
+    ElMessage.error(error instanceof Error ? error.message : '加载提醒记录失败')
   }
 }
 
@@ -144,54 +163,53 @@ onMounted(() => {
 <template>
   <div class="borrow-page">
     <section class="hero-card">
-      <span class="eyebrow">Borrow Module</span>
-      <h2>Pickup, return, and overdue tracking</h2>
+      <span class="eyebrow">借用模块</span>
+      <h2>领取、归还与逾期跟踪</h2>
       <p>
-        Students can confirm pickup and return, while admin roles can inspect reminders and mark overdue records when
-        needed.
+        学生可以确认领取和归还，管理员可以查看提醒记录，并在需要时将记录标记为逾期。
       </p>
     </section>
 
     <section class="toolbar-card">
       <div class="filter-grid">
-        <ElSelect v-model="filters.status" placeholder="Borrow status" clearable>
-          <ElOption v-for="status in statusOptions" :key="status" :label="status" :value="status" />
+        <ElSelect v-model="filters.status" placeholder="借用状态" clearable>
+          <ElOption v-for="status in statusOptions" :key="status" :label="borrowStatusLabel(status)" :value="status" />
         </ElSelect>
       </div>
 
       <div class="toolbar-actions">
-        <ElButton @click="handleReset">Reset</ElButton>
-        <ElButton type="primary" @click="handleSearch">Search</ElButton>
-        <ElButton v-if="isAdmin" type="warning" @click="openReminders('ABOUT_TO_EXPIRE')">About To Expire</ElButton>
-        <ElButton v-if="isAdmin" type="danger" @click="openReminders('OVERDUE')">Overdue Reminders</ElButton>
+        <ElButton @click="handleReset">重置</ElButton>
+        <ElButton type="primary" @click="handleSearch">查询</ElButton>
+        <ElButton v-if="isAdmin" type="warning" @click="openReminders('ABOUT_TO_EXPIRE')">即将到期</ElButton>
+        <ElButton v-if="isAdmin" type="danger" @click="openReminders('OVERDUE')">逾期提醒</ElButton>
       </div>
     </section>
 
     <section class="table-card">
       <ElTable :data="page.list" v-loading="loading" width="100%">
-        <ElTableColumn prop="deviceName" label="Device" min-width="180" />
-        <ElTableColumn prop="userName" label="Borrower" min-width="140" />
-        <ElTableColumn prop="status" label="Status" min-width="140">
+        <ElTableColumn prop="deviceName" label="设备" min-width="180" />
+        <ElTableColumn prop="userName" label="借用人" min-width="140" />
+        <ElTableColumn prop="status" label="状态" min-width="140">
           <template #default="{ row }">
             <ElTag :type="row.status === 'BORROWING' ? 'warning' : row.status === 'RETURNED' ? 'success' : 'info'">
-              {{ row.status }}
+              {{ borrowStatusLabel(row.status) }}
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="pickupTime" label="Pickup Time" min-width="160" />
-        <ElTableColumn prop="expectedReturnTime" label="Expected Return" min-width="160" />
-        <ElTableColumn prop="returnTime" label="Return Time" min-width="160" />
-        <ElTableColumn label="Actions" min-width="300" fixed="right">
+        <ElTableColumn prop="pickupTime" label="领取时间" min-width="160" />
+        <ElTableColumn prop="expectedReturnTime" label="应还时间" min-width="160" />
+        <ElTableColumn prop="returnTime" label="归还时间" min-width="160" />
+        <ElTableColumn label="操作" min-width="300" fixed="right">
           <template #default="{ row }">
             <div class="action-row">
               <ElButton v-if="isStudent && row.status === 'PICKUP_PENDING'" link type="primary" @click="openPickupDialog(row)">
-                Confirm Pickup
+                确认领取
               </ElButton>
               <ElButton v-if="isStudent && (row.status === 'BORROWING' || row.status === 'OVERDUE')" link type="success" @click="openReturnDialog(row)">
-                Confirm Return
+                确认归还
               </ElButton>
               <ElButton v-if="isAdmin && row.status === 'BORROWING'" link type="danger" @click="handleMarkOverdue(row)">
-                Mark Overdue
+                标记逾期
               </ElButton>
             </div>
           </template>
@@ -210,42 +228,42 @@ onMounted(() => {
       </div>
     </section>
 
-    <ElDialog v-model="pickupDialogVisible" title="Confirm Pickup" width="420px">
+    <ElDialog v-model="pickupDialogVisible" title="确认领取" width="420px">
       <ElForm label-position="top">
-        <ElFormItem label="Pickup Time">
+        <ElFormItem label="领取时间">
           <ElInput v-model="pickupForm.pickupTime" placeholder="YYYY-MM-DD HH:mm:ss" />
         </ElFormItem>
       </ElForm>
       <template #footer>
-        <ElButton @click="pickupDialogVisible = false">Cancel</ElButton>
-        <ElButton type="primary" @click="submitPickup">Confirm</ElButton>
+        <ElButton @click="pickupDialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="submitPickup">确认</ElButton>
       </template>
     </ElDialog>
 
-    <ElDialog v-model="returnDialogVisible" title="Confirm Return" width="460px">
+    <ElDialog v-model="returnDialogVisible" title="确认归还" width="460px">
       <ElForm label-position="top">
-        <ElFormItem label="Return Time">
+        <ElFormItem label="归还时间">
           <ElInput v-model="returnForm.returnTime" placeholder="YYYY-MM-DD HH:mm:ss" />
         </ElFormItem>
-        <ElFormItem label="Device Condition">
+        <ElFormItem label="设备状况">
           <ElSelect v-model="returnForm.deviceCondition">
-            <ElOption label="NORMAL" value="NORMAL" />
-            <ElOption label="DAMAGED" value="DAMAGED" />
+            <ElOption label="正常" value="NORMAL" />
+            <ElOption label="损坏" value="DAMAGED" />
           </ElSelect>
         </ElFormItem>
       </ElForm>
       <template #footer>
-        <ElButton @click="returnDialogVisible = false">Cancel</ElButton>
-        <ElButton type="primary" @click="submitReturn">Confirm</ElButton>
+        <ElButton @click="returnDialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="submitReturn">确认</ElButton>
       </template>
     </ElDialog>
 
-    <ElDrawer v-model="reminderDrawerVisible" title="Reminder Records" size="480px">
+    <ElDrawer v-model="reminderDrawerVisible" title="提醒记录" size="480px">
       <div class="reminder-list">
         <article v-for="item in reminders" :key="item.recordId" class="reminder-card">
           <strong>{{ item.deviceName }}</strong>
           <span>{{ item.userName }}</span>
-          <span>{{ item.status }} / {{ item.expectedReturnTime }}</span>
+          <span>{{ borrowStatusLabel(item.status) }} / {{ item.expectedReturnTime }}</span>
         </article>
       </div>
     </ElDrawer>

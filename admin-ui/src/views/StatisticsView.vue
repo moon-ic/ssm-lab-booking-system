@@ -28,9 +28,9 @@ const query = reactive<Required<Pick<StatisticsQuery, 'rankScope' | 'topN'>>>({
 })
 
 const scopeOptions: Array<{ label: string; value: RankScope }> = [
-  { label: 'Total', value: 'TOTAL' },
-  { label: 'Half Year', value: 'HALF_YEAR' },
-  { label: 'Month', value: 'MONTH' }
+  { label: '累计', value: 'TOTAL' },
+  { label: '近半年', value: 'HALF_YEAR' },
+  { label: '近一个月', value: 'MONTH' }
 ]
 
 const topNOptions = [3, 5, 10]
@@ -42,29 +42,29 @@ const summaryCards = computed(() => {
 
   return [
     {
-      title: 'Devices in system',
+      title: '系统设备数',
       value: overview.value.deviceTotal,
-      description: 'Registered devices across the current workspace.'
+      description: '当前工作台内已登记的设备总数。'
     },
     {
-      title: 'Currently available',
+      title: '当前可用',
       value: overview.value.availableDeviceTotal,
-      description: 'Devices ready to be reserved or borrowed.'
+      description: '当前可预约或可借用的设备数量。'
     },
     {
-      title: 'Active borrowing',
+      title: '借用中',
       value: overview.value.borrowingTotal,
-      description: 'Records still in borrowing or overdue status.'
+      description: '处于借用中或逾期中的记录数。'
     },
     {
-      title: 'Pending reservations',
+      title: '待审核预约',
       value: overview.value.pendingReservationTotal,
-      description: 'Reservation requests waiting for review.'
+      description: '仍在等待审核的预约申请数量。'
     },
     {
-      title: 'Pending repairs',
+      title: '待处理报修',
       value: overview.value.pendingRepairTotal,
-      description: 'Repair requests that still need processing.'
+      description: '仍需处理的维修申请数量。'
     }
   ]
 })
@@ -72,6 +72,29 @@ const summaryCards = computed(() => {
 function scopeLabel(scope: RankScope) {
   const option = scopeOptions.find((item) => item.value === scope)
   return option?.label ?? scope
+}
+
+function statisticsStatusLabel(status: string) {
+  switch (status) {
+    case 'AVAILABLE':
+      return '可用'
+    case 'COMPLETED':
+      return '已完成'
+    case 'RETURNED':
+      return '已归还'
+    case 'REPAIRING':
+      return '维修中'
+    case 'PROCESSING':
+      return '处理中'
+    case 'DAMAGED':
+      return '已损坏'
+    case 'UNREPAIRABLE':
+      return '无法修复'
+    case 'OVERDUE':
+      return '已逾期'
+    default:
+      return status
+  }
 }
 
 function statusTagType(status: string) {
@@ -108,7 +131,7 @@ async function loadStatistics() {
     damageDeviceList.value = damageResult
     violationUserList.value = violationResult
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load statistics')
+    ElMessage.error(error instanceof Error ? error.message : '加载统计数据失败')
   } finally {
     loading.value = false
   }
@@ -132,27 +155,27 @@ onMounted(() => {
 <template>
   <div class="statistics-page" v-loading="loading">
     <section class="hero-card">
-      <span class="eyebrow">Statistics Module</span>
-      <h2>Overview and ranking dashboards</h2>
+      <span class="eyebrow">统计模块</span>
+      <h2>概览与排行看板</h2>
       <p>
-        This workspace brings the PRD analytics scope into one page: global overview, hot devices, repair pressure,
-        and user violation ranking. The time dimension and top list length stay aligned with the backend contract.
+        当前页面将 PRD 中的分析范围集中到一个工作台，包含整体概览、热门设备、维修压力和用户违规排行，
+        时间维度与 Top N 设置均与后端约定保持一致。
       </p>
     </section>
 
     <section class="toolbar-card">
       <div class="filter-grid">
-        <ElSelect v-model="query.rankScope" placeholder="Rank scope">
+        <ElSelect v-model="query.rankScope" placeholder="统计范围">
           <ElOption v-for="option in scopeOptions" :key="option.value" :label="option.label" :value="option.value" />
         </ElSelect>
-        <ElSelect v-model="query.topN" placeholder="Top N">
-          <ElOption v-for="count in topNOptions" :key="count" :label="`Top ${count}`" :value="count" />
+        <ElSelect v-model="query.topN" placeholder="排行数量">
+          <ElOption v-for="count in topNOptions" :key="count" :label="`前 ${count}`" :value="count" />
         </ElSelect>
       </div>
 
       <div class="toolbar-actions">
-        <ElButton @click="handleReset">Reset</ElButton>
-        <ElButton type="primary" @click="handleSearch">Refresh</ElButton>
+        <ElButton @click="handleReset">重置</ElButton>
+        <ElButton type="primary" @click="handleSearch">刷新</ElButton>
       </div>
     </section>
 
@@ -168,8 +191,8 @@ onMounted(() => {
       <article class="panel-card">
         <div class="panel-header">
           <div>
-            <span class="panel-kicker">Hot Devices</span>
-            <h3>Borrowing popularity ranking</h3>
+            <span class="panel-kicker">热门设备</span>
+            <h3>借用热度排行</h3>
           </div>
           <ElTag>{{ scopeLabel(query.rankScope) }}</ElTag>
         </div>
@@ -183,18 +206,18 @@ onMounted(() => {
             </div>
             <div class="metric-box">
               <strong>{{ item.borrowCount }}</strong>
-              <span>Borrows</span>
+              <span>借用次数</span>
             </div>
           </div>
         </div>
-        <ElEmpty v-else description="No hot-device data in the current scope" />
+        <ElEmpty v-else description="当前范围暂无热门设备数据" />
       </article>
 
       <article class="panel-card">
         <div class="panel-header">
           <div>
-            <span class="panel-kicker">Damage Devices</span>
-            <h3>Repair pressure ranking</h3>
+            <span class="panel-kicker">故障设备</span>
+            <h3>维修压力排行</h3>
           </div>
           <ElTag type="warning">{{ scopeLabel(query.rankScope) }}</ElTag>
         </div>
@@ -208,19 +231,19 @@ onMounted(() => {
             </div>
             <div class="metric-box">
               <strong>{{ item.damageCount }}</strong>
-              <span>Repairs</span>
+              <span>报修次数</span>
             </div>
-            <ElTag size="small" :type="statusTagType(item.status)">{{ item.status }}</ElTag>
+            <ElTag size="small" :type="statusTagType(item.status)">{{ statisticsStatusLabel(item.status) }}</ElTag>
           </div>
         </div>
-        <ElEmpty v-else description="No damaged-device data in the current scope" />
+        <ElEmpty v-else description="当前范围暂无故障设备数据" />
       </article>
 
       <article class="panel-card">
         <div class="panel-header">
           <div>
-            <span class="panel-kicker">Violation Users</span>
-            <h3>Risk user ranking</h3>
+            <span class="panel-kicker">违规用户</span>
+            <h3>风险用户排行</h3>
           </div>
           <ElTag type="danger">{{ scopeLabel(query.rankScope) }}</ElTag>
         </div>
@@ -233,16 +256,16 @@ onMounted(() => {
               <span>{{ item.jobNoOrStudentNo }}</span>
             </div>
             <div class="user-metrics">
-              <span>Overdue {{ item.overdueCount }}</span>
-              <span>Damage {{ item.damageCount }}</span>
+              <span>逾期 {{ item.overdueCount }}</span>
+              <span>损坏 {{ item.damageCount }}</span>
             </div>
             <div class="metric-box">
               <strong>{{ item.violationCount }}</strong>
-              <span>Total</span>
+              <span>总计</span>
             </div>
           </div>
         </div>
-        <ElEmpty v-else description="No violation data in the current scope" />
+        <ElEmpty v-else description="当前范围暂无违规数据" />
       </article>
     </section>
   </div>

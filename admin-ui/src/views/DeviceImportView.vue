@@ -23,7 +23,7 @@ const form = reactive({
 })
 
 const rules = {
-  deviceName: [{ required: true, message: 'Please enter device name', trigger: 'blur' }]
+  deviceName: [{ required: true, message: '请输入设备名称', trigger: 'blur' }]
 }
 
 function revokePreview() {
@@ -58,7 +58,7 @@ async function submitImport() {
   await formRef.value?.validate()
 
   if (!selectedFile.value) {
-    ElMessage.error('Please select an image file')
+    ElMessage.error('请选择图片文件')
     return
   }
 
@@ -72,9 +72,9 @@ async function submitImport() {
       description: form.description,
       image: selectedFile.value
     })
-    ElMessage.success('Device imported successfully')
+    ElMessage.success('设备导入成功')
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Import failed')
+    ElMessage.error(error instanceof Error ? error.message : '导入失败')
   } finally {
     loading.value = false
   }
@@ -88,11 +88,11 @@ onBeforeUnmount(() => {
 <template>
   <div class="import-page">
     <section class="hero-card">
-      <span class="eyebrow">Device Import</span>
-      <h2>Register a new device with image upload</h2>
+      <span class="eyebrow">设备导入</span>
+      <h2>上传图片并登记新设备</h2>
       <p>
-        This module follows the backend import flow: required device name, optional metadata, and a required image
-        file. Successful imports return a generated device ID and code.
+        该模块遵循后端导入流程：设备名称必填，其他信息可选，且必须上传一张图片。导入成功后会返回生成的设备 ID
+        和设备编号。
       </p>
     </section>
 
@@ -100,60 +100,60 @@ onBeforeUnmount(() => {
       <article class="form-card">
         <div class="card-header">
           <div>
-            <h3>Import Form</h3>
-            <p>Fill in the device basics and upload one image.</p>
+            <h3>导入表单</h3>
+            <p>填写设备基础信息并上传一张图片。</p>
           </div>
         </div>
 
         <ElForm ref="formRef" :model="form" :rules="rules" label-position="top">
-          <ElFormItem label="Device Name" prop="deviceName">
-            <ElInput v-model="form.deviceName" placeholder="Enter device name" />
+          <ElFormItem label="设备名称" prop="deviceName">
+            <ElInput v-model="form.deviceName" placeholder="请输入设备名称" />
           </ElFormItem>
-          <ElFormItem label="Category">
-            <ElInput v-model="form.category" placeholder="Optional category" />
+          <ElFormItem label="分类">
+            <ElInput v-model="form.category" placeholder="选填分类" />
           </ElFormItem>
-          <ElFormItem label="Location">
-            <ElInput v-model="form.location" placeholder="Optional location" />
+          <ElFormItem label="位置">
+            <ElInput v-model="form.location" placeholder="选填位置" />
           </ElFormItem>
-          <ElFormItem label="Description">
-            <ElInput v-model="form.description" type="textarea" :rows="4" placeholder="Optional description" />
+          <ElFormItem label="描述">
+            <ElInput v-model="form.description" type="textarea" :rows="4" placeholder="选填描述" />
           </ElFormItem>
-          <ElFormItem label="Device Image">
+          <ElFormItem label="设备图片">
             <input class="file-input" type="file" accept="image/*" @change="handleFileChange" />
           </ElFormItem>
         </ElForm>
 
         <div class="form-actions">
-          <ElButton @click="resetForm">Reset</ElButton>
-          <ElButton type="primary" :loading="loading" @click="submitImport">Import Device</ElButton>
+          <ElButton @click="resetForm">重置</ElButton>
+          <ElButton type="primary" :loading="loading" @click="submitImport">导入设备</ElButton>
         </div>
       </article>
 
       <article class="preview-card">
         <div class="card-header">
           <div>
-            <h3>Preview</h3>
-            <p>Check the image and generated result panel before moving on.</p>
+            <h3>预览</h3>
+            <p>导入前可先查看图片和生成结果面板。</p>
           </div>
         </div>
 
         <div class="preview-panel">
-          <img v-if="previewUrl" :src="previewUrl" alt="Device preview" class="preview-image" />
-          <div v-else class="preview-empty">No image selected yet</div>
+          <img v-if="previewUrl" :src="previewUrl" alt="设备预览图" class="preview-image" />
+          <div v-else class="preview-empty">暂未选择图片</div>
         </div>
 
         <div v-if="importResult" class="result-card">
           <strong>{{ importResult.deviceName }}</strong>
           <span>{{ importResult.deviceCode }}</span>
           <span>{{ importResult.status }} / {{ importResult.location }}</span>
-          <p>{{ importResult.description || 'No description provided.' }}</p>
+          <p>{{ importResult.description || '暂无描述' }}</p>
         </div>
       </article>
     </section>
 
     <section v-else class="forbidden-card">
-      <h3>Import permission required</h3>
-      <p>Only admin and super admin can access device import. Your current role can still browse device inventory.</p>
+      <h3>需要导入权限</h3>
+      <p>只有管理员和超级管理员可以访问设备导入页面，当前角色仍可继续浏览设备库存。</p>
     </section>
   </div>
 </template>

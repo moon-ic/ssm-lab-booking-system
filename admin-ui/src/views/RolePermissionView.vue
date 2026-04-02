@@ -37,8 +37,8 @@ const assignmentForm = reactive({
 })
 
 const saveRules = {
-  roleName: [{ required: true, message: 'Please enter role name', trigger: 'blur' }],
-  roleCode: [{ required: true, message: 'Please enter role code', trigger: 'blur' }]
+  roleName: [{ required: true, message: '请输入角色名称', trigger: 'blur' }],
+  roleCode: [{ required: true, message: '请输入角色编码', trigger: 'blur' }]
 }
 
 const actionPermissions = computed(() => permissions.value.filter((item) => item.type === 'ACTION'))
@@ -62,7 +62,7 @@ async function loadInitialData() {
       await selectRole(roleList[0].roleId)
     }
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load role data')
+    ElMessage.error(error instanceof Error ? error.message : '加载角色数据失败')
   } finally {
     loading.value = false
   }
@@ -76,7 +76,7 @@ async function selectRole(roleId: number) {
     const detail = await getRoleDetail(roleId)
     selectedRole.value = detail
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load role detail')
+    ElMessage.error(error instanceof Error ? error.message : '加载角色详情失败')
   } finally {
     detailLoading.value = false
   }
@@ -116,12 +116,12 @@ async function submitSave() {
       ? await updateRole(saveForm.roleId, payload)
       : await createRole(payload)
 
-    ElMessage.success(saveForm.roleId ? 'Role updated' : 'Role created')
+    ElMessage.success(saveForm.roleId ? '角色更新成功' : '角色创建成功')
     saveDialogVisible.value = false
     await loadInitialData()
     await selectRole(role.roleId)
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Save failed')
+    ElMessage.error(error instanceof Error ? error.message : '保存失败')
   }
 }
 
@@ -148,9 +148,9 @@ async function submitAssignment() {
     selectedRole.value = updated
     roles.value = roles.value.map((item) => (item.roleId === updated.roleId ? updated : item))
     assignDrawerVisible.value = false
-    ElMessage.success('Permissions updated')
+    ElMessage.success('权限分配已更新')
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Assignment failed')
+    ElMessage.error(error instanceof Error ? error.message : '分配失败')
   }
 }
 
@@ -170,11 +170,10 @@ onMounted(() => {
 <template>
   <div class="role-page">
     <section class="hero-card">
-      <span class="eyebrow">Role Module</span>
-      <h2>Role and permission management</h2>
+      <span class="eyebrow">角色模块</span>
+      <h2>角色与权限管理</h2>
       <p>
-        This page mirrors the backend role management flow for super admins: create roles, edit metadata, and assign
-        action permissions plus menu visibility.
+        该页面面向超级管理员，支持创建角色、编辑元数据，并分配操作权限与可见菜单。
       </p>
     </section>
 
@@ -182,10 +181,10 @@ onMounted(() => {
       <article class="role-list-card">
         <div class="card-header">
           <div>
-            <h3>Roles</h3>
-            <p>{{ roles.length }} total roles</p>
+            <h3>角色列表</h3>
+            <p>共 {{ roles.length }} 个角色</p>
           </div>
-          <ElButton type="primary" @click="openCreateDialog">New Role</ElButton>
+          <ElButton type="primary" @click="openCreateDialog">新建角色</ElButton>
         </div>
 
         <div class="role-list">
@@ -199,7 +198,7 @@ onMounted(() => {
           >
             <strong>{{ role.roleName }}</strong>
             <span>{{ role.roleCode }}</span>
-            <small>{{ role.permissionIds.length }} permissions, {{ role.menuIds.length }} menus</small>
+            <small>{{ role.permissionIds.length }} 个权限，{{ role.menuIds.length }} 个菜单</small>
           </button>
         </div>
       </article>
@@ -207,12 +206,12 @@ onMounted(() => {
       <article class="role-detail-card">
         <div class="card-header">
           <div>
-            <h3>Role Detail</h3>
+            <h3>角色详情</h3>
             <p v-if="selectedRole">{{ selectedRole.roleCode }}</p>
           </div>
           <div class="header-actions">
-            <ElButton :disabled="!selectedRole" @click="openEditDialog">Edit</ElButton>
-            <ElButton type="success" :disabled="!selectedRole" @click="openAssignDrawer">Assign</ElButton>
+            <ElButton :disabled="!selectedRole" @click="openEditDialog">编辑</ElButton>
+            <ElButton type="success" :disabled="!selectedRole" @click="openAssignDrawer">分配权限</ElButton>
           </div>
         </div>
 
@@ -220,21 +219,21 @@ onMounted(() => {
         <template v-else-if="selectedRole">
           <div class="detail-meta">
             <article>
-              <strong>Role name</strong>
+              <strong>角色名称</strong>
               <span>{{ selectedRole.roleName }}</span>
             </article>
             <article>
-              <strong>Role code</strong>
+              <strong>角色编码</strong>
               <span>{{ selectedRole.roleCode }}</span>
             </article>
             <article>
-              <strong>Remark</strong>
+              <strong>备注</strong>
               <span>{{ selectedRole.remark || '--' }}</span>
             </article>
           </div>
 
           <div class="chip-section">
-            <h4>Action permissions</h4>
+            <h4>操作权限</h4>
             <div class="chip-list">
               <ElTag v-for="permissionId in selectedRole.permissionIds" :key="permissionId" type="primary">
                 {{ permissionName(permissionId) }}
@@ -243,7 +242,7 @@ onMounted(() => {
           </div>
 
           <div class="chip-section">
-            <h4>Visible menus</h4>
+            <h4>可见菜单</h4>
             <div class="chip-list">
               <ElTag v-for="menuId in selectedRole.menuIds" :key="menuId" type="success">
                 {{ menuName(menuId) }}
@@ -254,27 +253,27 @@ onMounted(() => {
       </article>
     </section>
 
-    <ElDialog v-model="saveDialogVisible" :title="saveForm.roleId ? 'Edit Role' : 'Create Role'" width="460px">
+    <ElDialog v-model="saveDialogVisible" :title="saveForm.roleId ? '编辑角色' : '新建角色'" width="460px">
       <ElForm ref="saveFormRef" :model="saveForm" :rules="saveRules" label-position="top">
-        <ElFormItem label="Role Name" prop="roleName">
-          <ElInput v-model="saveForm.roleName" placeholder="Enter role name" />
+        <ElFormItem label="角色名称" prop="roleName">
+          <ElInput v-model="saveForm.roleName" placeholder="请输入角色名称" />
         </ElFormItem>
-        <ElFormItem label="Role Code" prop="roleCode">
-          <ElInput v-model="saveForm.roleCode" placeholder="Enter role code" />
+        <ElFormItem label="角色编码" prop="roleCode">
+          <ElInput v-model="saveForm.roleCode" placeholder="请输入角色编码" />
         </ElFormItem>
-        <ElFormItem label="Remark">
-          <ElInput v-model="saveForm.remark" type="textarea" :rows="3" placeholder="Optional remark" />
+        <ElFormItem label="备注">
+          <ElInput v-model="saveForm.remark" type="textarea" :rows="3" placeholder="选填备注" />
         </ElFormItem>
       </ElForm>
       <template #footer>
-        <ElButton @click="saveDialogVisible = false">Cancel</ElButton>
-        <ElButton type="primary" @click="submitSave">Save</ElButton>
+        <ElButton @click="saveDialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="submitSave">保存</ElButton>
       </template>
     </ElDialog>
 
-    <ElDrawer v-model="assignDrawerVisible" title="Assign Permissions" size="520px">
+    <ElDrawer v-model="assignDrawerVisible" title="分配权限" size="520px">
       <div class="assign-section">
-        <h4>Action permissions</h4>
+        <h4>操作权限</h4>
         <ElCheckboxGroup v-model="assignmentForm.permissionIds" class="check-grid">
           <ElCheckbox v-for="permission in actionPermissions" :key="permission.permissionId" :value="permission.permissionId">
             {{ permission.permissionName }}
@@ -283,7 +282,7 @@ onMounted(() => {
       </div>
 
       <div class="assign-section">
-        <h4>Visible menus</h4>
+        <h4>可见菜单</h4>
         <ElCheckboxGroup v-model="assignmentForm.menuIds" class="check-grid">
           <ElCheckbox v-for="menu in menus" :key="menu.menuId" :value="menu.menuId">
             {{ menu.menuName }} / {{ menu.path }}
@@ -294,8 +293,8 @@ onMounted(() => {
 
       <template #footer>
         <div class="drawer-footer">
-          <ElButton @click="assignDrawerVisible = false">Cancel</ElButton>
-          <ElButton type="primary" @click="submitAssignment">Save Assignment</ElButton>
+          <ElButton @click="assignDrawerVisible = false">取消</ElButton>
+          <ElButton type="primary" @click="submitAssignment">保存分配</ElButton>
         </div>
       </template>
     </ElDrawer>

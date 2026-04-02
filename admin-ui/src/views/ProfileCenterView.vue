@@ -54,20 +54,54 @@ const unconfirmedCount = computed(() => messageData.value.filter((item) => item.
 function roleLabel(roleCode?: string) {
   switch (roleCode) {
     case 'SUPER_ADMIN':
-      return 'Super Admin'
+      return '超级管理员'
     case 'ADMIN':
-      return 'Admin'
+      return '管理员'
     case 'TEACHER':
-      return 'Teacher'
+      return '教师'
     case 'STUDENT':
-      return 'Student'
+      return '学生'
     default:
       return '--'
   }
 }
 
 function messageTypeLabel(type: NotificationType) {
-  return type.split('_').join(' ')
+  switch (type) {
+    case 'FIRST_LOGIN_PASSWORD_CHANGE':
+      return '首次登录改密提醒'
+    case 'PASSWORD_RESET':
+      return '密码重置通知'
+    case 'RESERVATION_EXPIRED':
+      return '预约已过期'
+    case 'BORROW_OVERDUE':
+      return '借用逾期'
+    case 'ABOUT_TO_EXPIRE_REMINDER':
+      return '即将到期提醒'
+    case 'OVERDUE_REMINDER':
+      return '逾期提醒'
+    default:
+      return type
+  }
+}
+
+function borrowStatusLabel(status: BorrowStatus) {
+  switch (status) {
+    case 'PICKUP_PENDING':
+      return '待领取'
+    case 'BORROWING':
+      return '借用中'
+    case 'RETURNED':
+      return '已归还'
+    case 'OVERDUE':
+      return '已逾期'
+    default:
+      return status
+  }
+}
+
+function confirmStatusLabel(status: 'UNCONFIRMED' | 'CONFIRMED') {
+  return status === 'CONFIRMED' ? '已确认' : '未确认'
 }
 
 async function loadProfile() {
@@ -92,7 +126,7 @@ async function loadAll() {
   try {
     await Promise.all([loadProfile(), loadBorrowRecords(), loadMessages()])
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to load personal center')
+    ElMessage.error(error instanceof Error ? error.message : '加载个人中心失败')
   } finally {
     loading.value = false
   }
@@ -101,10 +135,10 @@ async function loadAll() {
 async function handleConfirmMessage(messageId: number) {
   try {
     await confirmMyMessage(messageId)
-    ElMessage.success('Message confirmed')
+    ElMessage.success('消息已确认')
     await loadMessages()
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : 'Failed to confirm message')
+    ElMessage.error(error instanceof Error ? error.message : '确认消息失败')
   }
 }
 
@@ -126,11 +160,10 @@ onMounted(() => {
 <template>
   <div class="profile-page" v-loading="loading">
     <section class="hero-card">
-      <span class="eyebrow">Profile Center</span>
-      <h2>Personal profile, borrow records, and message center</h2>
+      <span class="eyebrow">个人中心</span>
+      <h2>个人资料、借用记录与消息中心</h2>
       <p>
-        This module brings together the current user profile, self-service borrow history, and message confirmation in
-        one place for all signed-in roles.
+        该模块聚合了当前用户资料、自助借用历史和消息确认能力，所有已登录角色都可使用。
       </p>
     </section>
 
@@ -141,63 +174,67 @@ onMounted(() => {
       </article>
       <article class="summary-card">
         <strong>{{ profile.jobNoOrStudentNo }}</strong>
-        <span>Login ID</span>
+        <span>登录编号</span>
       </article>
       <article class="summary-card">
         <strong>{{ profile.creditScore }}</strong>
-        <span>Credit score</span>
+        <span>信用分</span>
       </article>
       <article class="summary-card">
         <strong>{{ unconfirmedCount }}</strong>
-        <span>Unconfirmed messages</span>
+        <span>未确认消息</span>
       </article>
     </section>
 
     <section class="panel-card">
       <ElTabs v-model="activeTab">
-        <ElTabPane label="Profile" name="profile">
+        <ElTabPane label="个人资料" name="profile">
           <div v-if="profile" class="profile-grid">
             <article>
-              <strong>Name</strong>
+              <strong>姓名</strong>
               <span>{{ profile.name }}</span>
             </article>
             <article>
-              <strong>Account</strong>
+              <strong>账号</strong>
               <span>{{ profile.account }}</span>
             </article>
             <article>
-              <strong>Login ID</strong>
+              <strong>登录编号</strong>
               <span>{{ profile.jobNoOrStudentNo }}</span>
             </article>
             <article>
-              <strong>Role</strong>
+              <strong>角色</strong>
               <span>{{ roleLabel(profile.roleCode) }}</span>
             </article>
             <article>
-              <strong>Status</strong>
+              <strong>状态</strong>
               <span>{{ profile.status }}</span>
             </article>
             <article>
-              <strong>First login</strong>
-              <span>{{ profile.firstLoginRequired ? 'Password change pending' : 'Completed' }}</span>
+              <strong>首次登录</strong>
+              <span>{{ profile.firstLoginRequired ? '待修改密码' : '已完成' }}</span>
             </article>
           </div>
         </ElTabPane>
 
-        <ElTabPane label="My Borrow Records" name="borrow-records">
+        <ElTabPane label="我的借用记录" name="borrow-records">
           <div class="toolbar">
-            <ElSelect v-model="borrowQuery.status" placeholder="Borrow status" clearable @change="handleBorrowFilter">
-              <ElOption v-for="status in borrowStatusOptions" :key="status" :label="status" :value="status" />
+            <ElSelect v-model="borrowQuery.status" placeholder="借用状态" clearable @change="handleBorrowFilter">
+              <ElOption v-for="status in borrowStatusOptions" :key="status" :label="borrowStatusLabel(status)" :value="status" />
             </ElSelect>
           </div>
 
           <ElTable :data="borrowData">
-            <ElTableColumn prop="deviceName" label="Device" min-width="180" />
-            <ElTableColumn prop="status" label="Status" min-width="120" />
-            <ElTableColumn prop="pickupTime" label="Pickup Time" min-width="160" />
-            <ElTableColumn prop="expectedReturnTime" label="Expected Return" min-width="160" />
-            <ElTableColumn prop="returnTime" label="Returned At" min-width="160" />
-            <ElTableColumn prop="deviceCondition" label="Condition" min-width="140" />
+            <ElTableColumn prop="deviceName" label="设备" min-width="180" />
+            <ElTableColumn prop="status" label="状态" min-width="120">
+              <template #default="{ row }">
+                {{ borrowStatusLabel(row.status) }}
+              </template>
+            </ElTableColumn>
+            <ElTableColumn prop="pickupTime" label="领取时间" min-width="160" />
+            <ElTableColumn prop="expectedReturnTime" label="应还时间" min-width="160" />
+            <ElTableColumn prop="returnTime" label="归还时间" min-width="160" />
+            <ElTableColumn prop="deviceCondition" label="设备状况" min-width="140" />
           </ElTable>
 
           <div class="pagination-wrap">
@@ -212,13 +249,13 @@ onMounted(() => {
           </div>
         </ElTabPane>
 
-        <ElTabPane label="My Messages" name="messages">
+        <ElTabPane label="我的消息" name="messages">
           <div class="toolbar two-col">
-            <ElSelect v-model="messageQuery.confirmStatus" placeholder="Confirm status" clearable @change="handleMessageFilter">
-              <ElOption label="Unconfirmed" value="UNCONFIRMED" />
-              <ElOption label="Confirmed" value="CONFIRMED" />
+            <ElSelect v-model="messageQuery.confirmStatus" placeholder="确认状态" clearable @change="handleMessageFilter">
+              <ElOption label="未确认" value="UNCONFIRMED" />
+              <ElOption label="已确认" value="CONFIRMED" />
             </ElSelect>
-            <ElSelect v-model="messageQuery.type" placeholder="Message type" clearable @change="handleMessageFilter">
+            <ElSelect v-model="messageQuery.type" placeholder="消息类型" clearable @change="handleMessageFilter">
               <ElOption v-for="type in messageTypeOptions" :key="type" :label="messageTypeLabel(type)" :value="type" />
             </ElSelect>
           </div>
@@ -231,7 +268,7 @@ onMounted(() => {
                   <span>{{ messageTypeLabel(message.type) }}</span>
                 </div>
                 <ElTag :type="message.confirmStatus === 'CONFIRMED' ? 'success' : 'warning'">
-                  {{ message.confirmStatus }}
+                  {{ confirmStatusLabel(message.confirmStatus) }}
                 </ElTag>
               </div>
               <p>{{ message.content }}</p>
@@ -243,7 +280,7 @@ onMounted(() => {
                   link
                   @click="handleConfirmMessage(message.messageId)"
                 >
-                  Confirm
+                  确认
                 </ElButton>
               </div>
             </article>

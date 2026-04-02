@@ -22,8 +22,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'dashboard',
     component: () => import('@/views/DashboardView.vue'),
     meta: {
-      title: 'Dashboard',
-      description: 'Overview of the current authenticated workspace.',
+      title: '首页',
+      description: '查看当前登录工作台的整体概览。',
       menu: true,
       allowFirstLogin: true
     } satisfies AppRouteMeta
@@ -33,8 +33,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'users',
     component: () => import('@/views/UserManagementView.vue'),
     meta: {
-      title: 'Users',
-      description: 'Manage admin, teacher, and student accounts.',
+      title: '用户管理',
+      description: '管理管理员、教师和学生账号。',
       menu: true,
       roles: ['SUPER_ADMIN', 'ADMIN', 'TEACHER']
     } satisfies AppRouteMeta
@@ -44,8 +44,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'roles',
     component: () => import('@/views/RolePermissionView.vue'),
     meta: {
-      title: 'Roles',
-      description: 'Configure roles, permissions, and menu visibility.',
+      title: '角色权限',
+      description: '配置角色、权限与菜单可见范围。',
       menu: true,
       roles: ['SUPER_ADMIN']
     } satisfies AppRouteMeta
@@ -55,8 +55,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'profile',
     component: () => import('@/views/ProfileCenterView.vue'),
     meta: {
-      title: 'Profile',
-      description: 'Review personal info, borrow records, and messages.',
+      title: '个人中心',
+      description: '查看个人信息、借用记录和消息通知。',
       menu: true,
       roles: ['SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT'],
       allowFirstLogin: true
@@ -67,8 +67,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'devices',
     component: () => import('@/views/DeviceManagementView.vue'),
     meta: {
-      title: 'Devices',
-      description: 'Browse and maintain device information.',
+      title: '设备管理',
+      description: '浏览并维护设备信息。',
       menu: true,
       roles: ['SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT']
     } satisfies AppRouteMeta
@@ -78,8 +78,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'device-imports',
     component: () => import('@/views/DeviceImportView.vue'),
     meta: {
-      title: 'Device Imports',
-      description: 'Import devices and register image-based entries.',
+      title: '设备导入',
+      description: '导入设备并登记图片类条目。',
       menu: true,
       roles: ['SUPER_ADMIN', 'ADMIN']
     } satisfies AppRouteMeta
@@ -89,8 +89,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'reservations',
     component: () => import('@/views/ReservationManagementView.vue'),
     meta: {
-      title: 'Reservations',
-      description: 'Review or submit reservation records by role.',
+      title: '预约管理',
+      description: '按角色提交或审核预约记录。',
       menu: true,
       roles: ['SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT']
     } satisfies AppRouteMeta
@@ -100,8 +100,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'borrow-records',
     component: () => import('@/views/BorrowRecordManagementView.vue'),
     meta: {
-      title: 'Borrow Records',
-      description: 'Track pickup, return, and overdue records.',
+      title: '借用记录',
+      description: '跟踪领取、归还与逾期记录。',
       menu: true,
       roles: ['ADMIN', 'TEACHER', 'STUDENT']
     } satisfies AppRouteMeta
@@ -111,8 +111,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'messages',
     component: () => import('@/views/MessageCenterView.vue'),
     meta: {
-      title: 'Messages',
-      description: 'Review notifications and confirmation items.',
+      title: '消息中心',
+      description: '查看通知消息和待确认事项。',
       menu: true,
       roles: ['ADMIN', 'TEACHER', 'STUDENT']
     } satisfies AppRouteMeta
@@ -122,8 +122,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'repairs',
     component: () => import('@/views/RepairManagementView.vue'),
     meta: {
-      title: 'Repairs',
-      description: 'Submit or process repair requests.',
+      title: '维修管理',
+      description: '提交或处理维修申请。',
       menu: true,
       roles: ['ADMIN', 'TEACHER', 'STUDENT']
     } satisfies AppRouteMeta
@@ -133,8 +133,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'statistics',
     component: () => import('@/views/StatisticsView.vue'),
     meta: {
-      title: 'Statistics',
-      description: 'Access overview and ranking dashboards.',
+      title: '统计分析',
+      description: '查看概览数据与排行看板。',
       menu: true,
       roles: ['SUPER_ADMIN', 'ADMIN']
     } satisfies AppRouteMeta
@@ -144,8 +144,8 @@ export const appRouteChildren: RouteRecordRaw[] = [
     name: 'menu-config',
     component: () => import('@/views/MenuConfigView.vue'),
     meta: {
-      title: 'Menu Config',
-      description: 'Maintain icon and menu configuration.',
+      title: '菜单配置',
+      description: '维护图标和菜单配置。',
       menu: true,
       roles: ['SUPER_ADMIN']
     } satisfies AppRouteMeta

@@ -14,26 +14,26 @@ const menuItems = computed(() => getAccessibleMenuItems(roleCode.value))
 <template>
   <div class="dashboard-grid">
     <section class="hero-card">
-      <span class="eyebrow">Permission Ready</span>
-      <h2>Role-aware routing is now active</h2>
+      <span class="eyebrow">权限就绪</span>
+      <h2>已启用按角色控制的路由访问</h2>
       <p>
-        Signed in as <strong>{{ userName }}</strong> with role <strong>{{ roleCode }}</strong>. The sidebar and route
-        access now follow the role definition from the PRD and API contract.
+        当前登录用户为 <strong>{{ userName }}</strong>，角色为 <strong>{{ roleCode }}</strong>。侧边菜单和页面访问权限
+        已按 PRD 与接口约定生效。
       </p>
     </section>
 
     <section class="stats-grid">
       <article class="stat-card">
-        <strong>First-login mode</strong>
-        <span>{{ firstLoginRequired ? 'Dashboard only until password change' : 'All eligible modules unlocked' }}</span>
+        <strong>首次登录状态</strong>
+        <span>{{ firstLoginRequired ? '修改密码前仅可访问首页' : '已解锁全部可访问模块' }}</span>
       </article>
       <article class="stat-card">
-        <strong>Visible menus</strong>
-        <span>{{ menuItems.length }} items</span>
+        <strong>可见菜单</strong>
+        <span>{{ menuItems.length }} 项</span>
       </article>
       <article class="stat-card">
-        <strong>Guard strategy</strong>
-        <span>auth + role meta + 403 fallback</span>
+        <strong>权限策略</strong>
+        <span>登录校验 + 角色元信息 + 403 兜底</span>
       </article>
     </section>
   </div>

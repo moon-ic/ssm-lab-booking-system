@@ -10,15 +10,15 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const displayName = computed(() => authStore.state.currentUser?.name ?? authStore.state.session?.userInfo.name ?? 'Unknown user')
+const displayName = computed(() => authStore.state.currentUser?.name ?? authStore.state.session?.userInfo.name ?? '未知用户')
 const roleCode = computed(() => authStore.state.currentUser?.roleCode ?? authStore.state.session?.userInfo.roleCode ?? '--')
 const firstLoginRequired = computed(() => Boolean(authStore.state.session?.firstLoginRequired))
 const menuItems = computed(() => getAccessibleMenuItems(roleCode.value))
 
 async function handleLogout() {
-  await ElMessageBox.confirm('Sign out and return to the login page?', 'Sign out', {
-    confirmButtonText: 'Sign out',
-    cancelButtonText: 'Cancel',
+  await ElMessageBox.confirm('确认退出登录并返回登录页吗？', '退出登录', {
+    confirmButtonText: '退出登录',
+    cancelButtonText: '取消',
     type: 'warning'
   })
 
@@ -31,8 +31,8 @@ async function handleLogout() {
   <div class="layout-shell">
     <aside class="layout-sidebar">
       <div class="brand">
-        <strong>Lab Admin</strong>
-        <span>Role-based navigation</span>
+        <strong>实验室后台</strong>
+        <span>按角色显示导航</span>
       </div>
 
       <nav class="nav-list">
@@ -52,9 +52,9 @@ async function handleLogout() {
     <main class="layout-main">
       <header class="layout-header">
         <div class="header-copy">
-          <h1>Permission Routing</h1>
+          <h1>权限工作台</h1>
           <p>
-            Menus are filtered by role. Routes are protected by auth, role access, and first-login password rules.
+            菜单会按角色自动过滤，页面访问同时受登录状态、角色权限和首次登录改密规则控制。
           </p>
         </div>
 
@@ -63,12 +63,12 @@ async function handleLogout() {
             <strong>{{ displayName }}</strong>
             <span>{{ roleCode }}</span>
           </div>
-          <button class="logout-button" type="button" @click="handleLogout">Sign out</button>
+          <button class="logout-button" type="button" @click="handleLogout">退出登录</button>
         </div>
       </header>
 
       <section v-if="firstLoginRequired" class="first-login-banner">
-        First login is still pending. Only the dashboard stays available until the password is changed.
+        当前仍处于首次登录状态，修改密码前仅可访问首页。
       </section>
 
       <section class="layout-content">
