@@ -15,7 +15,7 @@ const roleCode = computed(() => authStore.state.currentUser?.roleCode ?? authSto
   <section class="module-card">
     <span class="eyebrow">权限路由</span>
     <h2>{{ meta.title }}</h2>
-    <p>{{ meta.description }}</p>
+    <p>该模块已接入权限路由守卫，可根据角色与首次登录状态控制访问。</p>
 
     <div class="module-grid">
       <article>

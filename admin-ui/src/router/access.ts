@@ -12,7 +12,6 @@ export interface AppRouteMeta {
 export interface MenuItem {
     title: string;
     path: string;
-    description: string;
 }
 
 export const appRouteChildren: RouteRecordRaw[] = [
@@ -160,8 +159,7 @@ export function getAccessibleMenuItems(roleCode?: string): MenuItem[] {
             const meta = route.meta as unknown as AppRouteMeta;
             return {
                 title: meta.title,
-                path: route.path ? `/${route.path}` : "/",
-                description: meta.description
+                path: route.path ? `/${route.path}` : "/"
             };
         });
 }

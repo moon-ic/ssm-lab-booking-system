@@ -17,12 +17,10 @@ describe('router access helpers', () => {
 
   it('allows routes without roles and blocks missing role when required', () => {
     const openMeta: AppRouteMeta = {
-      title: 'Dashboard',
-      description: 'Open route'
+      title: 'Dashboard'
     }
     const protectedMeta: AppRouteMeta = {
       title: 'Roles',
-      description: 'Protected route',
       roles: ['SUPER_ADMIN']
     }
 
