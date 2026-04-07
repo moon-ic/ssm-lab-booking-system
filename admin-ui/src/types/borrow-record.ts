@@ -29,9 +29,7 @@ export interface BorrowRecordListResponse {
   total: number
 }
 
-export interface PickupPayload {
-  pickupTime: string
-}
+export interface PickupPayload {}
 
 export interface ReturnPayload {
   returnTime: string

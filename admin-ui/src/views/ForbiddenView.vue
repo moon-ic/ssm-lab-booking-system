@@ -14,10 +14,10 @@
   display: grid;
   gap: 16px;
   padding: 36px;
-  border: 1px solid rgba(248, 113, 113, 0.24);
+  border: 1px solid rgba(75, 131, 205, 0.22);
   border-radius: 24px;
-  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  box-shadow: 0 20px 60px rgba(75, 131, 205, 0.12);
 }
 
 .forbidden-card h2 {
@@ -28,7 +28,7 @@
 .forbidden-card p {
   margin: 0;
   line-height: 1.7;
-  color: #7c2d12;
+  color: var(--theme-text-soft);
 }
 
 .eyebrow {
@@ -36,8 +36,8 @@
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #991b1b;
-  background: #fee2e2;
+  color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -48,7 +48,7 @@
   width: fit-content;
   padding: 12px 16px;
   border-radius: 14px;
-  color: #fff7ed;
-  background: #9a3412;
+  color: #f8fbff;
+  background: var(--theme-primary);
 }
 </style>

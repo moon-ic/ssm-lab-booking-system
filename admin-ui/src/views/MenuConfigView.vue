@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { listMenuConfigs, listIcons, updateMenuConfig } from '@/api/menu-config'
@@ -39,17 +39,17 @@ const summaryCards = computed(() => [
   {
     title: '菜单',
     value: menus.value.length,
-    description: '当前已登记的可配置菜单项。'
+    description: '当前已登记的可配置菜单项'
   },
   {
     title: '图标',
     value: icons.value.length,
-    description: '可用于菜单配置的内置图标名称。'
+    description: '可用于菜单配置的内置图标名称'
   },
   {
     title: '权限编码',
     value: permissionOptions.value.length,
-    description: '可与菜单项绑定的操作权限编码。'
+    description: '可与菜单项绑定的操作权限编码'
   }
 ])
 
@@ -308,8 +308,8 @@ onMounted(() => {
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #155e75;
-  background: #cffafe;
+  color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -383,8 +383,8 @@ onMounted(() => {
 }
 
 .menu-item.is-active {
-  border-color: rgba(14, 116, 144, 0.28);
-  background: #ecfeff;
+  border-color: rgba(75, 131, 205, 0.28);
+  background: rgba(224, 233, 246, 0.78);
 }
 
 .detail-grid {
@@ -446,3 +446,5 @@ onMounted(() => {
   }
 }
 </style>
+
+

@@ -7,11 +7,16 @@ import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.UserEntity;
 import com.lab.booking.repository.DeviceRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -23,10 +28,16 @@ public class DeviceService {
 
     private final DeviceRepository deviceRepository;
     private final AuthService authService;
+    private final Path deviceUploadDir;
 
-    public DeviceService(DeviceRepository deviceRepository, AuthService authService) {
+    public DeviceService(
+            DeviceRepository deviceRepository,
+            AuthService authService,
+            @Value("${app.storage.upload-dir:${user.dir}/uploads}") String uploadDir
+    ) {
         this.deviceRepository = deviceRepository;
         this.authService = authService;
+        this.deviceUploadDir = Path.of(uploadDir, "devices").toAbsolutePath().normalize();
     }
 
     public Map<String, Object> listDevices(String keyword, String category, DeviceStatus status, Integer pageNum, Integer pageSize) {
@@ -111,7 +122,7 @@ public class DeviceService {
         device.setCategory(category == null || category.isBlank() ? "Imported" : category.trim());
         device.setStatus(DeviceStatus.AVAILABLE);
         device.setLocation(location == null || location.isBlank() ? "TBD" : location.trim());
-        device.setImageUrl(buildImageUrl(deviceId, image.getOriginalFilename()));
+        device.setImageUrl(storeImage(deviceId, image));
         device.setDescription(description);
         deviceRepository.save(device);
         return toDeviceDetail(device);
@@ -191,10 +202,27 @@ public class DeviceService {
         return "EQ-" + LocalDate.now().getYear() + "-" + String.format("%04d", deviceId);
     }
 
-    private String buildImageUrl(long deviceId, String originalFilename) {
+    private String storeImage(long deviceId, MultipartFile image) {
+        String storedFileName = buildStoredFileName(deviceId, image.getOriginalFilename());
+        Path target = deviceUploadDir.resolve(storedFileName).normalize();
+        if (!target.startsWith(deviceUploadDir)) {
+            throw new ApiException(400, "image 文件名不合法");
+        }
+
+        try {
+            Files.createDirectories(deviceUploadDir);
+            Files.copy(image.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException ex) {
+            throw new ApiException(500, "图片保存失败");
+        }
+
+        return "/uploads/devices/" + storedFileName;
+    }
+
+    private String buildStoredFileName(long deviceId, String originalFilename) {
         String safeName = (originalFilename == null || originalFilename.isBlank())
                 ? "device.png"
                 : originalFilename.replaceAll("[^A-Za-z0-9._-]", "_");
-        return "/uploads/devices/" + deviceId + "-" + safeName;
+        return deviceId + "-" + safeName;
     }
 }

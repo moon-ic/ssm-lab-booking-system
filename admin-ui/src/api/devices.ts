@@ -1,4 +1,4 @@
-import request from '@/api/request'
+import request, { resolveApiAssetUrl, toApiAssetPath } from '@/api/request'
 import {
   deviceStatusOptions,
   mockCreateDevice,
@@ -39,6 +39,13 @@ async function unwrapResult<T>(promise: Promise<{ data: ApiResult<T> }>) {
   return response.data.data
 }
 
+function normalizeDevice(device: DeviceItem) {
+  return {
+    ...device,
+    imageUrl: resolveApiAssetUrl(device.imageUrl)
+  }
+}
+
 export function listDevices(query: DeviceListQuery) {
   if (useMock) {
     return mockListDevices(query)
@@ -46,7 +53,10 @@ export function listDevices(query: DeviceListQuery) {
 
   return unwrapResult(
     request.get<ApiResult<DeviceListResponse>>('/api/devices', { params: query })
-  )
+  ).then((result) => ({
+    ...result,
+    list: result.list.map(normalizeDevice)
+  }))
 }
 
 export function getDeviceDetail(deviceId: number) {
@@ -56,7 +66,7 @@ export function getDeviceDetail(deviceId: number) {
 
   return unwrapResult(
     request.get<ApiResult<DeviceItem>>(`/api/devices/${deviceId}`)
-  )
+  ).then(normalizeDevice)
 }
 
 export function createDevice(payload: SaveDevicePayload) {
@@ -65,8 +75,11 @@ export function createDevice(payload: SaveDevicePayload) {
   }
 
   return unwrapResult(
-    request.post<ApiResult<DeviceItem>>('/api/devices', payload)
-  )
+    request.post<ApiResult<DeviceItem>>('/api/devices', {
+      ...payload,
+      imageUrl: toApiAssetPath(payload.imageUrl)
+    })
+  ).then(normalizeDevice)
 }
 
 export function updateDevice(deviceId: number, payload: SaveDevicePayload) {
@@ -75,8 +88,11 @@ export function updateDevice(deviceId: number, payload: SaveDevicePayload) {
   }
 
   return unwrapResult(
-    request.put<ApiResult<DeviceItem>>(`/api/devices/${deviceId}`, payload)
-  )
+    request.put<ApiResult<DeviceItem>>(`/api/devices/${deviceId}`, {
+      ...payload,
+      imageUrl: toApiAssetPath(payload.imageUrl)
+    })
+  ).then(normalizeDevice)
 }
 
 export async function updateDeviceStatus(deviceId: number, payload: UpdateDeviceStatusPayload) {

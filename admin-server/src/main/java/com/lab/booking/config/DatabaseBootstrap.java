@@ -12,6 +12,22 @@ import java.util.List;
 @Component
 public class DatabaseBootstrap {
 
+    private static final List<String> CORE_TABLES = List.of(
+            "sys_user",
+            "sys_role",
+            "sys_permission",
+            "sys_role_permission",
+            "sys_role_menu",
+            "sys_menu",
+            "sys_icon",
+            "lab_device",
+            "lab_reservation",
+            "lab_borrow_record",
+            "lab_repair",
+            "lab_notification",
+            "lab_task_execution_log"
+    );
+
     private final JdbcTemplate jdbcTemplate;
     private final DataSource dataSource;
 
@@ -22,18 +38,16 @@ public class DatabaseBootstrap {
 
     @PostConstruct
     public void initializeIfNeeded() {
-        if (!tableExists("sys_user")) {
-            runScripts();
-            return;
-        }
-
-        Integer userCount = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM sys_user", Integer.class);
-        if (userCount == null || userCount == 0) {
-            runScripts();
-            return;
+        if (!coreTablesExist()) {
+            runSchemaScript();
         }
 
         upgradeSchemaIfNeeded();
+
+        if (!tableExists("sys_user") || isTableEmpty("sys_user")) {
+            runSeedScript();
+        }
+
         upgradeBuiltinPasswordsIfNeeded();
     }
 
@@ -56,7 +70,8 @@ public class DatabaseBootstrap {
         for (String table : tables) {
             jdbcTemplate.execute("DROP TABLE IF EXISTS " + table);
         }
-        runScripts();
+        runSchemaScript();
+        runSeedScript();
     }
 
     private boolean tableExists(String tableName) {
@@ -71,9 +86,23 @@ public class DatabaseBootstrap {
         return count != null && count > 0;
     }
 
-    private void runScripts() {
+    private boolean coreTablesExist() {
+        return CORE_TABLES.stream().allMatch(this::tableExists);
+    }
+
+    private boolean isTableEmpty(String tableName) {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM " + tableName, Integer.class);
+        return count == null || count == 0;
+    }
+
+    private void runSchemaScript() {
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
         populator.addScript(new ClassPathResource("db/migration/V1__init_schema.sql"));
+        populator.execute(dataSource);
+    }
+
+    private void runSeedScript() {
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
         populator.addScript(new ClassPathResource("db/migration/V2__seed_data.sql"));
         populator.execute(dataSource);
     }
@@ -98,6 +127,10 @@ public class DatabaseBootstrap {
     }
 
     private void ensureColumnExists(String tableName, String columnName, String ddl) {
+        if (!tableExists(tableName)) {
+            return;
+        }
+
         Integer count = jdbcTemplate.queryForObject("""
                         SELECT COUNT(1)
                         FROM information_schema.columns

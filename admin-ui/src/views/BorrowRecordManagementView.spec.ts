@@ -12,6 +12,9 @@ vi.mock('element-plus', () => ({
   ElMessage: {
     success: vi.fn(),
     error: vi.fn()
+  },
+  ElMessageBox: {
+    confirm: vi.fn().mockResolvedValue(undefined)
   }
 }))
 
@@ -63,8 +66,8 @@ describe('BorrowRecordManagementView', () => {
           deviceName: 'Flow Camera',
           userName: 'Student Wang',
           status: 'BORROWING',
-          pickupTime: '2026-04-10 09:00:00',
-          expectedReturnTime: '2026-04-12 18:00:00',
+          pickupTime: '2026-04-10 09:00',
+          expectedReturnTime: '2026-04-12 18:00',
           returnTime: null
         }
       ],
@@ -76,7 +79,7 @@ describe('BorrowRecordManagementView', () => {
         deviceName: 'Flow Camera',
         userName: 'Student Wang',
         status: 'BORROWING',
-        expectedReturnTime: '2026-04-12 18:00:00',
+        expectedReturnTime: '2026-04-12 18:00',
         reminderType: 'ABOUT_TO_EXPIRE'
       }
     ])
@@ -86,11 +89,10 @@ describe('BorrowRecordManagementView', () => {
     const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Borrow Module')
-    expect(wrapper.text()).toContain('About To Expire')
+    expect(wrapper.text()).toContain('即将到期')
     expect(wrapper.find('.el-table-stub').text()).toContain('Flow Camera')
 
-    await findButton(wrapper, 'About To Expire')?.trigger('click')
+    await findButton(wrapper, '即将到期')?.trigger('click')
     await flushPromises()
 
     expect(listBorrowRemindersMock).toHaveBeenCalledWith('ABOUT_TO_EXPIRE')

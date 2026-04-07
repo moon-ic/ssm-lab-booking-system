@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listDevices } from '@/api/devices'
@@ -47,22 +47,44 @@ const createForm = reactive({
   purpose: ''
 })
 
+const dateTimeValueFormat = 'YYYY-MM-DD HH:mm'
 const currentRole = computed(() => authStore.state.currentUser?.roleCode ?? authStore.state.session?.userInfo.roleCode ?? 'STUDENT')
 const canCreate = computed(() => currentRole.value === 'STUDENT')
-const canReview = computed(() => currentRole.value === 'SUPER_ADMIN' || currentRole.value === 'ADMIN' || currentRole.value === 'TEACHER')
-const statusOptions: ReservationStatus[] = ['PENDING', 'PICKUP_PENDING', 'REJECTED', 'EXPIRED', 'CANCELLED']
+const isTeacher = computed(() => currentRole.value === 'TEACHER')
+const isAdmin = computed(() => currentRole.value === 'SUPER_ADMIN' || currentRole.value === 'ADMIN')
+const statusOptions: ReservationStatus[] = ['PENDING', 'APPROVED', 'PICKUP_PENDING', 'REJECTED', 'EXPIRED', 'CANCELLED']
+
+function toApiDateTime(value: string) {
+  return value.length === 16 ? `${value}:00` : value
+}
+
+const validateTimeRange = (_rule: unknown, _value: string, callback: (error?: Error) => void) => {
+  if (createForm.startTime && createForm.endTime && createForm.endTime <= createForm.startTime) {
+    callback(new Error('结束时间必须晚于开始时间'))
+    return
+  }
+  callback()
+}
 
 const createRules = {
   deviceId: [{ required: true, message: '请选择设备', trigger: 'change' }],
-  startTime: [{ required: true, message: '请输入开始时间', trigger: 'blur' }],
-  endTime: [{ required: true, message: '请输入结束时间', trigger: 'blur' }],
+  startTime: [
+    { required: true, message: '请选择开始时间', trigger: 'change' },
+    { validator: validateTimeRange, trigger: 'change' }
+  ],
+  endTime: [
+    { required: true, message: '请选择结束时间', trigger: 'change' },
+    { validator: validateTimeRange, trigger: 'change' }
+  ],
   purpose: [{ required: true, message: '请输入用途说明', trigger: 'blur' }]
 }
 
 function reservationStatusLabel(status: ReservationStatus) {
   switch (status) {
     case 'PENDING':
-      return '待审核'
+      return '待教师审核'
+    case 'APPROVED':
+      return '待管理员审核'
     case 'PICKUP_PENDING':
       return '待领取'
     case 'REJECTED':
@@ -74,6 +96,47 @@ function reservationStatusLabel(status: ReservationStatus) {
     default:
       return status
   }
+}
+
+function disabledStartDate(date: Date) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return date.getTime() < today.getTime()
+}
+
+function disabledEndDate(date: Date) {
+  if (!createForm.startTime) {
+    return disabledStartDate(date)
+  }
+
+  const startDate = new Date(createForm.startTime.replace(/-/g, '/'))
+  startDate.setHours(0, 0, 0, 0)
+  return date.getTime() < startDate.getTime()
+}
+
+function handleStartTimeChange(value: string) {
+  if (value && createForm.endTime && createForm.endTime <= value) {
+    createForm.endTime = ''
+  }
+}
+
+function canApprove(row: ReservationItem) {
+  return (isTeacher.value && row.status === 'PENDING') || (isAdmin.value && row.status === 'APPROVED')
+}
+
+function canReject(row: ReservationItem) {
+  return (isTeacher.value && row.status === 'PENDING') || (isAdmin.value && (row.status === 'PENDING' || row.status === 'APPROVED'))
+}
+
+function canCancel(row: ReservationItem) {
+  return currentRole.value === 'STUDENT' && (row.status === 'PENDING' || row.status === 'APPROVED')
+}
+
+function approveButtonText(row: ReservationItem) {
+  if (isAdmin.value && row.status === 'APPROVED') {
+    return '终审通过'
+  }
+  return '教师通过'
 }
 
 async function loadReservations() {
@@ -126,8 +189,8 @@ async function submitCreate() {
   try {
     await createReservation({
       deviceId: createForm.deviceId!,
-      startTime: createForm.startTime,
-      endTime: createForm.endTime,
+      startTime: toApiDateTime(createForm.startTime),
+      endTime: toApiDateTime(createForm.endTime),
       purpose: createForm.purpose
     } satisfies CreateReservationPayload)
     ElMessage.success('预约申请已提交')
@@ -169,7 +232,12 @@ async function handleReview(row: ReservationItem, action: 'APPROVE' | 'REJECT') 
       action,
       comment
     } satisfies ApproveReservationPayload)
-    ElMessage.success(action === 'APPROVE' ? '预约已通过' : '预约已驳回')
+
+    if (action === 'APPROVE') {
+      ElMessage.success(isAdmin.value && row.status === 'APPROVED' ? '预约已完成终审' : '预约已通过教师审核')
+    } else {
+      ElMessage.success('预约已驳回')
+    }
     await loadReservations()
   } catch (error) {
     if (error === 'cancel') {
@@ -181,7 +249,7 @@ async function handleReview(row: ReservationItem, action: 'APPROVE' | 'REJECT') 
 
 async function handleCancel(row: ReservationItem) {
   try {
-    await ElMessageBox.confirm('确认取消这条待审核预约吗？', '取消预约', {
+    await ElMessageBox.confirm('确认取消这条预约申请吗？', '取消预约', {
       confirmButtonText: '确认取消',
       cancelButtonText: '返回',
       type: 'warning'
@@ -206,10 +274,8 @@ onMounted(() => {
   <div class="reservation-page">
     <section class="hero-card">
       <span class="eyebrow">预约模块</span>
-      <h2>预约申请与审批流程</h2>
-      <p>
-        学生可以提交预约，管理员和教师可以审核自己可见范围内的申请。页面状态流与后端保持一致。
-      </p>
+      <h2>预约申请与两级审核流程</h2>
+      <p>学生提交后会先进入教师审核，教师通过后再进入管理员终审，只有两级都通过才会进入待领取。</p>
     </section>
 
     <section class="toolbar-card">
@@ -234,38 +300,33 @@ onMounted(() => {
         <ElTableColumn prop="endTime" label="结束时间" min-width="160" />
         <ElTableColumn prop="status" label="状态" min-width="140">
           <template #default="{ row }">
-            <ElTag :type="row.status === 'PENDING' ? 'warning' : row.status === 'PICKUP_PENDING' ? 'success' : 'info'">
+            <ElTag
+              :type="
+                row.status === 'PENDING'
+                  ? 'warning'
+                  : row.status === 'APPROVED'
+                    ? 'info'
+                    : row.status === 'PICKUP_PENDING'
+                      ? 'success'
+                      : 'info'
+              "
+            >
               {{ reservationStatusLabel(row.status) }}
             </ElTag>
           </template>
         </ElTableColumn>
         <ElTableColumn prop="purpose" label="用途" min-width="220" />
-        <ElTableColumn label="操作" min-width="280" fixed="right">
+        <ElTableColumn label="操作" min-width="320" fixed="right">
           <template #default="{ row }">
             <div class="action-row">
               <ElButton link type="primary" @click="openDetail(row.reservationId)">详情</ElButton>
-              <ElButton
-                v-if="canReview && row.status === 'PENDING'"
-                link
-                type="success"
-                @click="handleReview(row, 'APPROVE')"
-              >
-                通过
+              <ElButton v-if="canApprove(row)" link type="success" @click="handleReview(row, 'APPROVE')">
+                {{ approveButtonText(row) }}
               </ElButton>
-              <ElButton
-                v-if="canReview && row.status === 'PENDING'"
-                link
-                type="danger"
-                @click="handleReview(row, 'REJECT')"
-              >
+              <ElButton v-if="canReject(row)" link type="danger" @click="handleReview(row, 'REJECT')">
                 驳回
               </ElButton>
-              <ElButton
-                v-if="currentRole === 'STUDENT' && row.status === 'PENDING'"
-                link
-                type="warning"
-                @click="handleCancel(row)"
-              >
+              <ElButton v-if="canCancel(row)" link type="warning" @click="handleCancel(row)">
                 取消
               </ElButton>
             </div>
@@ -289,14 +350,36 @@ onMounted(() => {
       <ElForm ref="createFormRef" :model="createForm" :rules="createRules" label-position="top">
         <ElFormItem label="设备" prop="deviceId">
           <ElSelect v-model="createForm.deviceId" placeholder="请选择可预约设备">
-            <ElOption v-for="device in devices" :key="device.deviceId" :label="`${device.deviceName} / ${device.deviceCode}`" :value="device.deviceId" />
+            <ElOption
+              v-for="device in devices"
+              :key="device.deviceId"
+              :label="`${device.deviceName} / ${device.deviceCode}`"
+              :value="device.deviceId"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="开始时间" prop="startTime">
-          <ElInput v-model="createForm.startTime" placeholder="YYYY-MM-DD HH:mm:ss" />
+          <ElDatePicker
+            v-model="createForm.startTime"
+            type="datetime"
+            placeholder="请选择开始时间"
+            :disabled-date="disabledStartDate"
+            :value-format="dateTimeValueFormat"
+            format="YYYY-MM-DD HH:mm"
+            style="width: 100%"
+            @change="handleStartTimeChange"
+          />
         </ElFormItem>
         <ElFormItem label="结束时间" prop="endTime">
-          <ElInput v-model="createForm.endTime" placeholder="YYYY-MM-DD HH:mm:ss" />
+          <ElDatePicker
+            v-model="createForm.endTime"
+            type="datetime"
+            placeholder="请选择结束时间"
+            :disabled-date="disabledEndDate"
+            :value-format="dateTimeValueFormat"
+            format="YYYY-MM-DD HH:mm"
+            style="width: 100%"
+          />
         </ElFormItem>
         <ElFormItem label="用途说明" prop="purpose">
           <ElInput v-model="createForm.purpose" type="textarea" :rows="3" placeholder="请填写预约用途" />
@@ -356,8 +439,8 @@ onMounted(() => {
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #155e75;
-  background: #cffafe;
+  color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -427,3 +510,5 @@ onMounted(() => {
   }
 }
 </style>
+
+

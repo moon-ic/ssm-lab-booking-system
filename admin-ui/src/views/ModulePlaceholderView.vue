@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { AppRouteMeta } from '@/router/access'
@@ -61,8 +61,8 @@ const roleCode = computed(() => authStore.state.currentUser?.roleCode ?? authSto
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #155e75;
-  background: #cffafe;
+  color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -93,3 +93,5 @@ const roleCode = computed(() => authStore.state.currentUser?.roleCode ?? authSto
   }
 }
 </style>
+
+

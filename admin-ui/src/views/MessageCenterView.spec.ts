@@ -3,10 +3,12 @@ import { reactive } from 'vue'
 import MessageCenterView from '@/views/MessageCenterView.vue'
 import { elementPlusStubs } from '@/test/element-stubs'
 
-const { listMessagesMock, unconfirmedSummaryMock, confirmMessageMock } = vi.hoisted(() => ({
+const { listMessagesMock, unconfirmedSummaryMock, confirmMessageMock, listMyMessagesMock, confirmMyMessageMock } = vi.hoisted(() => ({
   listMessagesMock: vi.fn(),
   unconfirmedSummaryMock: vi.fn(),
-  confirmMessageMock: vi.fn()
+  confirmMessageMock: vi.fn(),
+  listMyMessagesMock: vi.fn(),
+  confirmMyMessageMock: vi.fn()
 }))
 
 vi.mock('element-plus', () => ({
@@ -20,6 +22,11 @@ vi.mock('@/api/messages', () => ({
   confirmMessage: confirmMessageMock,
   listMessages: listMessagesMock,
   unconfirmedSummary: unconfirmedSummaryMock
+}))
+
+vi.mock('@/api/profile', () => ({
+  listMyMessages: listMyMessagesMock,
+  confirmMyMessage: confirmMyMessageMock
 }))
 
 vi.mock('@/store/auth', () => ({
@@ -59,14 +66,18 @@ describe('MessageCenterView', () => {
       list: [
         {
           messageId: 3001,
-          title: 'Reservation expires soon',
+          title: '预约即将到期',
           type: 'ABOUT_TO_EXPIRE_REMINDER',
-          content: 'Return before the deadline.',
+          content: '请在截止前处理。',
           confirmStatus: 'UNCONFIRMED',
-          createdAt: '2026-04-12 09:00:00'
+          createdAt: '2026-04-12 09:00'
         }
       ],
       total: 1
+    })
+    listMyMessagesMock.mockResolvedValue({
+      list: [],
+      total: 0
     })
     unconfirmedSummaryMock.mockResolvedValue({
       total: 6,
@@ -75,17 +86,17 @@ describe('MessageCenterView', () => {
       firstLoginCount: 1
     })
     confirmMessageMock.mockResolvedValue(undefined)
+    confirmMyMessageMock.mockResolvedValue(undefined)
   })
 
   it('loads message summary and confirms an unconfirmed message', async () => {
     const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Message Module')
-    expect(wrapper.text()).toContain('Total unconfirmed')
-    expect(wrapper.text()).toContain('Reservation expires soon')
+    expect(wrapper.text()).toContain('未确认总数')
+    expect(wrapper.text()).toContain('预约即将到期')
 
-    await findButton(wrapper, 'Confirm')?.trigger('click')
+    await findButton(wrapper, '确认')?.trigger('click')
     await flushPromises()
 
     expect(confirmMessageMock).toHaveBeenCalledWith(3001)

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -53,7 +53,7 @@ const saveRules = {
   deviceName: [{ required: true, message: '请输入设备名称', trigger: 'blur' }],
   deviceCode: [{ required: true, message: '请输入设备编号', trigger: 'blur' }],
   category: [{ required: true, message: '请输入分类', trigger: 'blur' }],
-  location: [{ required: true, message: '请输入存放地点', trigger: 'blur' }]
+  location: [{ required: true, message: '请输入存放地', trigger: 'blur' }]
 }
 
 const currentRole = computed(() => authStore.state.currentUser?.roleCode ?? authStore.state.session?.userInfo.roleCode ?? 'STUDENT')
@@ -360,8 +360,8 @@ onMounted(() => {
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #155e75;
-  background: #cffafe;
+  color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -459,3 +459,5 @@ onMounted(() => {
   }
 }
 </style>
+
+

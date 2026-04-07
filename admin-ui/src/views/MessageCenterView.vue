@@ -1,7 +1,8 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { confirmMessage, listMessages, unconfirmedSummary } from '@/api/messages'
+import { confirmMyMessage, listMyMessages } from '@/api/profile'
 import { useAuthStore } from '@/store/auth'
 import type { MessageItem, NotificationType } from '@/types/profile'
 import type { MessageListQuery, MessageSummary } from '@/types/message'
@@ -20,8 +21,8 @@ const query = reactive<MessageListQuery>({
 })
 
 const total = ref(0)
-
 const currentRole = computed(() => authStore.state.currentUser?.roleCode ?? authStore.state.session?.userInfo.roleCode ?? 'STUDENT')
+const isStudent = computed(() => currentRole.value === 'STUDENT')
 const showUserFilter = computed(() => currentRole.value === 'SUPER_ADMIN' || currentRole.value === 'ADMIN')
 
 const messageTypeOptions: NotificationType[] = [
@@ -61,9 +62,17 @@ async function loadMessages() {
 
   try {
     const [messageResult, summaryResult] = await Promise.all([
-      listMessages(query),
+      isStudent.value
+        ? listMyMessages({
+            type: query.type,
+            confirmStatus: query.confirmStatus,
+            pageNum: query.pageNum,
+            pageSize: query.pageSize
+          })
+        : listMessages(query),
       unconfirmedSummary()
     ])
+
     messages.value = messageResult.list
     total.value = messageResult.total
     summary.value = summaryResult
@@ -89,7 +98,11 @@ function handleReset() {
 
 async function handleConfirm(messageId: number) {
   try {
-    await confirmMessage(messageId)
+    if (isStudent.value) {
+      await confirmMyMessage(messageId)
+    } else {
+      await confirmMessage(messageId)
+    }
     ElMessage.success('消息已确认')
     await loadMessages()
   } catch (error) {
@@ -104,14 +117,6 @@ onMounted(() => {
 
 <template>
   <div class="message-page">
-    <section class="hero-card">
-      <span class="eyebrow">消息模块</span>
-      <h2>通知中心与确认流程</h2>
-      <p>
-        该页面为工作人员角色提供统一消息工作台，支持未确认汇总、条件筛选和一键确认。
-      </p>
-    </section>
-
     <section v-if="summary" class="summary-grid">
       <article class="summary-card">
         <strong>{{ summary.total }}</strong>
@@ -196,7 +201,6 @@ onMounted(() => {
   gap: 20px;
 }
 
-.hero-card,
 .toolbar-card,
 .panel-card,
 .summary-card {
@@ -205,30 +209,6 @@ onMounted(() => {
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
-}
-
-.hero-card h2 {
-  margin: 10px 0 12px;
-  font-size: 30px;
-}
-
-.hero-card p {
-  margin: 0;
-  line-height: 1.7;
-  color: #475569;
-}
-
-.eyebrow {
-  display: inline-flex;
-  width: fit-content;
-  padding: 6px 10px;
-  border-radius: 999px;
-  color: #155e75;
-  background: #cffafe;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .summary-grid {

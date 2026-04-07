@@ -127,7 +127,10 @@ describe('api integration with mock backend', () => {
     expect((await getReservationDetail(reservation.reservationId)).status).toBe('PENDING')
 
     localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'T2026888', password: '000000' })))
-    const approved = await approveReservation(reservation.reservationId, { action: 'APPROVE', comment: 'approved' })
+    const teacherApproved = await approveReservation(reservation.reservationId, { action: 'APPROVE', comment: 'teacher approved' })
+    expect(teacherApproved.status).toBe('APPROVED')
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'admin_flow', password: '000000' })))
+    const approved = await approveReservation(reservation.reservationId, { action: 'APPROVE', comment: 'admin approved' })
     expect(approved.status).toBe('PICKUP_PENDING')
     expect((await listReservations({ pageNum: 1, pageSize: 20 })).list.some((item) => item.reservationId === reservation.reservationId)).toBe(true)
 
@@ -138,8 +141,8 @@ describe('api integration with mock backend', () => {
     if (!record) {
       throw new Error('Expected borrow record to exist')
     }
-    await pickupBorrowRecord(record.recordId, { pickupTime: '2026-04-10 09:05:00' })
-    await returnBorrowRecord(record.recordId, { returnTime: '2026-04-10 17:30:00', deviceCondition: 'BROKEN' })
+    await pickupBorrowRecord(record.recordId, {})
+    await returnBorrowRecord(record.recordId, { returnTime: '2026-04-10 17:30', deviceCondition: 'BROKEN' })
 
     const repair = await createRepair({
       deviceId: device.deviceId,

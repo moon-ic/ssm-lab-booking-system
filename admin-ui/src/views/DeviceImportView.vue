@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { importDevice } from '@/api/device-imports'
@@ -138,7 +138,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="preview-panel">
-          <img v-if="previewUrl" :src="previewUrl" alt="设备预览图" class="preview-image" />
+          <img v-if="previewUrl" :src="previewUrl" alt="设备预览" class="preview-image" />
           <div v-else class="preview-empty">暂未选择图片</div>
         </div>
 
@@ -192,8 +192,8 @@ onBeforeUnmount(() => {
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #155e75;
-  background: #cffafe;
+  color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -258,7 +258,7 @@ onBeforeUnmount(() => {
   gap: 6px;
   padding: 18px;
   border-radius: 18px;
-  background: #ecfeff;
+  background: rgba(224, 233, 246, 0.78);
 }
 
 .result-card span,
@@ -273,3 +273,5 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+
+

@@ -2,10 +2,10 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.dto.ReservationDtos;
-import com.lab.booking.model.DeviceEntity;
-import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.BorrowRecordEntity;
 import com.lab.booking.model.BorrowStatus;
+import com.lab.booking.model.DeviceEntity;
+import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.ReservationEntity;
 import com.lab.booking.model.ReservationStatus;
 import com.lab.booking.model.RoleCode;
@@ -28,7 +28,8 @@ import java.util.Objects;
 @Service
 public class ReservationService {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter SECOND_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter MINUTE_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final ReservationRepository reservationRepository;
     private final DeviceRepository deviceRepository;
@@ -119,7 +120,7 @@ public class ReservationService {
         if (reviewer.getRoleCode() == RoleCode.TEACHER && !visibleTo(reviewer, reservation)) {
             throw new ApiException(403, "无权限审核该预约");
         }
-        if (reservation.getStatus() != ReservationStatus.PENDING) {
+        if (reservation.getStatus() != ReservationStatus.PENDING && reservation.getStatus() != ReservationStatus.APPROVED) {
             throw new ApiException(409, "当前预约状态不可审核");
         }
 
@@ -140,7 +141,7 @@ public class ReservationService {
         if (!Objects.equals(reservation.getApplicantId(), currentUser.getUserId())) {
             throw new ApiException(403, "仅本人可取消预约");
         }
-        if (reservation.getStatus() != ReservationStatus.PENDING) {
+        if (reservation.getStatus() != ReservationStatus.PENDING && reservation.getStatus() != ReservationStatus.APPROVED) {
             throw new ApiException(409, "当前预约状态不可取消");
         }
         reservation.setStatus(ReservationStatus.CANCELLED);
@@ -150,7 +151,7 @@ public class ReservationService {
     public void expireReservation(Long reservationId) {
         requireRoles(RoleCode.SUPER_ADMIN, RoleCode.ADMIN);
         ReservationEntity reservation = getExistingReservation(reservationId);
-        if (reservation.getStatus() != ReservationStatus.APPROVED && reservation.getStatus() != ReservationStatus.PICKUP_PENDING) {
+        if (reservation.getStatus() != ReservationStatus.PICKUP_PENDING) {
             throw new ApiException(409, "当前预约状态不可失效");
         }
         DeviceEntity device = getExistingDevice(reservation.getDeviceId());
@@ -162,14 +163,26 @@ public class ReservationService {
         reservation.setStatus(ReservationStatus.EXPIRED);
         record.setStatus(BorrowStatus.OVERDUE);
         borrowRecordRepository.save(record);
-        if (device.getStatus() == DeviceStatus.RESERVED) {
-            device.setStatus(DeviceStatus.AVAILABLE);
-            deviceRepository.save(device);
-        }
+        device.setStatus(DeviceStatus.AVAILABLE);
+        deviceRepository.save(device);
         reservationRepository.save(reservation);
     }
 
     private void approveReservationInternal(ReservationEntity reservation, UserEntity reviewer, String comment) {
+        if (reviewer.getRoleCode() == RoleCode.TEACHER) {
+            if (reservation.getStatus() != ReservationStatus.PENDING) {
+                throw new ApiException(409, "当前预约状态不可由教师审核通过");
+            }
+            reservation.setStatus(ReservationStatus.APPROVED);
+            reservation.setReviewerId(reviewer.getUserId());
+            reservation.setReviewComment(blankToNull(comment));
+            return;
+        }
+
+        if (reservation.getStatus() != ReservationStatus.APPROVED) {
+            throw new ApiException(409, "请先由教师审核通过");
+        }
+
         DeviceEntity device = getExistingDevice(reservation.getDeviceId());
         ensureReservableForApproval(device, reservation);
         ensureNoTimeConflict(reservation.getDeviceId(), reservation.getStartTime(), reservation.getEndTime(), reservation.getReservationId());
@@ -182,6 +195,9 @@ public class ReservationService {
     }
 
     private void rejectReservationInternal(ReservationEntity reservation, UserEntity reviewer, String comment) {
+        if (reviewer.getRoleCode() == RoleCode.TEACHER && reservation.getStatus() != ReservationStatus.PENDING) {
+            throw new ApiException(409, "当前预约状态不可由教师驳回");
+        }
         String actualComment = blankToNull(comment);
         if (actualComment == null) {
             throw new ApiException(400, "驳回原因不能为空");
@@ -209,17 +225,22 @@ public class ReservationService {
             throw new ApiException(409, "当前设备状态不可审核通过");
         }
         if (device.getStatus() == DeviceStatus.RESERVED) {
-            boolean reservedByCurrentReservation = reservationRepository.findAll().stream()
+            boolean reservedByOtherReservation = reservationRepository.findAll().stream()
                     .filter(item -> !Objects.equals(item.getReservationId(), reservation.getReservationId()))
-                    .anyMatch(item -> item.getDeviceId().equals(device.getDeviceId())
+                    .anyMatch(item -> Objects.equals(item.getDeviceId(), device.getDeviceId())
                             && item.getStatus() == ReservationStatus.PICKUP_PENDING);
-            if (reservedByCurrentReservation) {
+            if (reservedByOtherReservation) {
                 throw new ApiException(409, "当前设备已被其他预约锁定");
             }
         }
     }
 
     private void createBorrowRecord(ReservationEntity reservation) {
+        boolean exists = borrowRecordRepository.findByReservationId(reservation.getReservationId()).isPresent();
+        if (exists) {
+            return;
+        }
+
         BorrowRecordEntity record = new BorrowRecordEntity();
         record.setRecordId(borrowRecordRepository.nextRecordId());
         record.setReservationId(reservation.getReservationId());
@@ -310,15 +331,23 @@ public class ReservationService {
     }
 
     private LocalDateTime parseDateTime(String value, String fieldName) {
+        String actualValue = value == null ? "" : value.trim();
+        if (actualValue.isEmpty()) {
+            throw new ApiException(400, fieldName + " 时间不能为空");
+        }
         try {
-            return LocalDateTime.parse(value.trim(), DATE_TIME_FORMATTER);
+            return LocalDateTime.parse(actualValue, SECOND_DATE_TIME_FORMATTER);
         } catch (DateTimeParseException ex) {
-            throw new ApiException(400, fieldName + " 时间格式错误，需为 yyyy-MM-dd HH:mm:ss");
+            try {
+                return LocalDateTime.parse(actualValue, MINUTE_DATE_TIME_FORMATTER);
+            } catch (DateTimeParseException ignored) {
+                throw new ApiException(400, fieldName + " 时间格式错误，需要 yyyy-MM-dd HH:mm");
+            }
         }
     }
 
     private String formatDateTime(LocalDateTime dateTime) {
-        return dateTime == null ? null : dateTime.format(DATE_TIME_FORMATTER);
+        return dateTime == null ? null : dateTime.format(MINUTE_DATE_TIME_FORMATTER);
     }
 
     private String blankToNull(String value) {

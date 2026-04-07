@@ -53,14 +53,14 @@ describe('LoginView', () => {
       }
     })
 
-    expect(wrapper.text()).toContain('Equipment Borrowing Admin')
+    expect(wrapper.text()).toContain('设备借用管理后台')
     const buttons = wrapper.findAll('button')
     expect(buttons.length).toBeGreaterThanOrEqual(4)
 
     await buttons[0].trigger('click')
     const inputs = wrapper.findAll('input')
-    expect((inputs[0].element as HTMLInputElement).value).toBe('admin')
-    expect((inputs[1].element as HTMLInputElement).value).toBe('000000')
+    expect((inputs[0].element as HTMLInputElement).value).toBe('SA001')
+    expect((inputs[1].element as HTMLInputElement).value).toBe('0000')
 
     await buttons[3].trigger('click')
     await flushPromises()

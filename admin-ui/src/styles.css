@@ -1,9 +1,26 @@
 :root {
-  color: #1f2937;
+  --theme-primary: #4B83CD;
+  --theme-primary-hover: #5b90d6;
+  --theme-primary-press: #3f73b7;
+  --theme-primary-muted: #91B3E0;
+  --theme-primary-soft: #E0E9F6;
+  --theme-text: #16355f;
+  --theme-text-soft: #5f7ea7;
+  --theme-border: rgba(75, 131, 205, 0.18);
+  --theme-shadow: rgba(75, 131, 205, 0.14);
+  --theme-surface: rgba(255, 255, 255, 0.92);
+  color: var(--theme-text);
   background:
-    radial-gradient(circle at top, rgba(251, 191, 36, 0.16), transparent 24%),
-    linear-gradient(180deg, #f8fafc 0%, #edf4f7 100%);
+    radial-gradient(circle at top, rgba(145, 179, 224, 0.34), transparent 24%),
+    linear-gradient(180deg, #f8fbff 0%, #e0e9f6 100%);
   font-family: "Segoe UI", "PingFang SC", sans-serif;
+  --el-color-primary: var(--theme-primary);
+  --el-color-primary-light-3: #6c99d9;
+  --el-color-primary-light-5: #91b3e0;
+  --el-color-primary-light-7: #bad0eb;
+  --el-color-primary-light-8: #d2e0f2;
+  --el-color-primary-light-9: #eaf1fa;
+  --el-color-primary-dark-2: #3f73b7;
 }
 
 * {
@@ -13,7 +30,10 @@
 body {
   margin: 0;
   min-width: 320px;
-  color: #0f172a;
+  color: var(--theme-text);
+  background:
+    radial-gradient(circle at top left, rgba(145, 179, 224, 0.2), transparent 26%),
+    linear-gradient(180deg, #f8fbff 0%, #e0e9f6 100%);
 }
 
 a {
@@ -23,6 +43,11 @@ a {
 
 #app {
   min-height: 100vh;
+}
+
+::selection {
+  color: #fff;
+  background: var(--theme-primary);
 }
 
 button,

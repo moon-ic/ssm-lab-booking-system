@@ -1,4 +1,4 @@
-import request from '@/api/request'
+import request, { resolveApiAssetUrl } from '@/api/request'
 import { mockImportDevice } from '@/mock/devices'
 import type { ApiResult } from '@/types/auth'
 import type { DeviceItem } from '@/types/device'
@@ -24,6 +24,13 @@ async function unwrapResult<T>(promise: Promise<{ data: ApiResult<T> }>) {
     throw new Error(response.data.message || 'Request failed')
   }
   return response.data.data
+}
+
+function normalizeDevice(device: DeviceItem) {
+  return {
+    ...device,
+    imageUrl: resolveApiAssetUrl(device.imageUrl)
+  }
 }
 
 export async function importDevice(payload: {
@@ -62,5 +69,5 @@ export async function importDevice(payload: {
         'Content-Type': 'multipart/form-data'
       }
     })
-  )
+  ).then(normalizeDevice)
 }

@@ -58,8 +58,8 @@ describe('ReservationManagementView', () => {
           reservationId: 7001,
           deviceName: 'Flow Camera',
           applicantName: 'Student Wang',
-          startTime: '2026-04-10 09:00:00',
-          endTime: '2026-04-10 18:00:00',
+          startTime: '2026-04-10 09:00',
+          endTime: '2026-04-10 18:00',
           status: 'PENDING',
           purpose: 'shooting'
         }
@@ -87,8 +87,7 @@ describe('ReservationManagementView', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Reservation Module')
-    expect(wrapper.text()).toContain('Create Reservation')
+    expect(wrapper.text()).toContain('发起预约')
     expect(listReservationsMock).toHaveBeenCalled()
     expect(listDevicesMock).toHaveBeenCalled()
     expect(wrapper.find('.el-table-stub').text()).toContain('Flow Camera')

@@ -55,7 +55,25 @@
 
 ## 快速开始
 
-### 1. 启动后端
+### 1. 启动数据库
+
+请先确认本地 MySQL 服务已启动，并监听 `3306` 端口。
+
+Windows 可执行：
+
+```powershell
+Start-Service MySQL
+```
+
+项目默认连接配置：
+
+- 数据库：`lab_booking`
+- 用户名：`root`
+- 密码：`200453`
+
+如果你的本地 MySQL 不是这组配置，请通过 `DB_URL`、`DB_USERNAME`、`DB_PASSWORD` 覆盖。
+
+### 2. 启动后端
 
 ```bash
 cd admin-server
@@ -72,7 +90,7 @@ mvn spring-boot:run
 GET http://127.0.0.1:8081/api/health
 ```
 
-### 2. 启动前端
+### 3. 启动前端
 
 ```bash
 cd admin-ui
@@ -82,7 +100,7 @@ pnpm dev
 
 Vite 默认端口是 `5173`。如果端口被占用，会自动切换到下一个可用端口，例如 `5174`。
 
-### 3. 打开系统
+### 4. 打开系统
 
 默认访问：
 

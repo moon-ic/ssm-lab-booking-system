@@ -18,7 +18,7 @@ const defaultBorrowRecords: BorrowRecordItem[] = [
     deviceId: 1002,
     deviceName: 'Projector A',
     status: 'PICKUP_PENDING',
-    expectedReturnTime: '2026-04-06 17:00:00'
+    expectedReturnTime: '2026-04-06 17:00'
   },
   {
     recordId: 9002,
@@ -28,8 +28,8 @@ const defaultBorrowRecords: BorrowRecordItem[] = [
     deviceId: 1001,
     deviceName: 'Canon EOS Camera',
     status: 'BORROWING',
-    pickupTime: '2026-03-28 09:30:00',
-    expectedReturnTime: '2026-04-02 18:00:00'
+    pickupTime: '2026-03-28 09:30',
+    expectedReturnTime: '2026-04-02 18:00'
   }
 ]
 
@@ -75,6 +75,16 @@ function visibleTo(token: string, item: BorrowRecordItem) {
 
 function nextRecordId(items: BorrowRecordItem[]) {
   return items.reduce((max, item) => Math.max(max, item.recordId), 0) + 1
+}
+
+function formatCurrentMinute() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
 export function createPendingBorrowRecordFromReservation(reservation: {
@@ -128,7 +138,7 @@ export async function mockListBorrowRecords(token: string, query: BorrowRecordLi
   }
 }
 
-export async function mockPickupBorrowRecord(token: string, recordId: number, payload: PickupPayload) {
+export async function mockPickupBorrowRecord(token: string, recordId: number, _payload: PickupPayload) {
   await wait(180)
   const user = currentUser(token)
   if (user.roleCode !== 'STUDENT') {
@@ -148,7 +158,7 @@ export async function mockPickupBorrowRecord(token: string, recordId: number, pa
   }
 
   item.status = 'BORROWING'
-  item.pickupTime = payload.pickupTime
+  item.pickupTime = formatCurrentMinute()
   writeBorrowRecords(items)
   return item
 }

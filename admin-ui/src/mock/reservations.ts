@@ -18,11 +18,11 @@ const defaultReservations: ReservationItem[] = [
     deviceName: 'Canon EOS Camera',
     applicantId: 4,
     applicantName: 'Student Wang',
-    startTime: '2026-04-02 09:00:00',
-    endTime: '2026-04-04 18:00:00',
+    startTime: '2026-04-02 09:00',
+    endTime: '2026-04-04 18:00',
     purpose: 'Campus media recording',
     status: 'PENDING',
-    createdAt: '2026-03-31 10:00:00'
+    createdAt: '2026-03-31 10:00'
   },
   {
     reservationId: 7002,
@@ -30,11 +30,11 @@ const defaultReservations: ReservationItem[] = [
     deviceName: 'Projector A',
     applicantId: 5,
     applicantName: 'Student Zhao',
-    startTime: '2026-04-06 08:00:00',
-    endTime: '2026-04-06 17:00:00',
+    startTime: '2026-04-06 08:00',
+    endTime: '2026-04-06 17:00',
     purpose: 'Presentation rehearsal',
     status: 'PICKUP_PENDING',
-    createdAt: '2026-03-29 11:20:00',
+    createdAt: '2026-03-29 11:20',
     reviewComment: 'Approved for class use',
     reviewerId: 3,
     reviewerName: 'Teacher Li'
@@ -138,7 +138,7 @@ export async function mockCreateReservation(token: string, payload: CreateReserv
     endTime: payload.endTime,
     purpose: payload.purpose,
     status: 'PENDING',
-    createdAt: '2026-03-31 18:30:00'
+    createdAt: '2026-03-31 18:30'
   }
   items.push(item)
   writeReservations(items)
@@ -160,20 +160,40 @@ export async function mockApproveReservation(token: string, reservationId: numbe
   if (!visibleTo(token, item)) {
     throw new Error('No permission to review this reservation')
   }
-  if (item.status !== 'PENDING') {
-    throw new Error('Only pending reservations can be reviewed')
-  }
-
   if (payload.action === 'REJECT' && !payload.comment?.trim()) {
     throw new Error('Reject comment is required')
   }
 
-  item.status = payload.action === 'APPROVE' ? 'PICKUP_PENDING' : 'REJECTED'
-  item.reviewComment = payload.comment?.trim() || ''
-  item.reviewerId = user.userId
-  item.reviewerName = user.name
   if (payload.action === 'APPROVE') {
-    createPendingBorrowRecordFromReservation(item)
+    if (user.roleCode === 'TEACHER') {
+      if (item.status !== 'PENDING') {
+        throw new Error('Teacher can only approve pending reservations')
+      }
+      item.status = 'APPROVED'
+      item.reviewComment = payload.comment?.trim() || ''
+      item.reviewerId = user.userId
+      item.reviewerName = user.name
+    } else {
+      if (item.status !== 'APPROVED') {
+        throw new Error('Admin can only approve teacher-approved reservations')
+      }
+      item.status = 'PICKUP_PENDING'
+      item.reviewComment = payload.comment?.trim() || ''
+      item.reviewerId = user.userId
+      item.reviewerName = user.name
+      createPendingBorrowRecordFromReservation(item)
+    }
+  } else {
+    if (user.roleCode === 'TEACHER' && item.status !== 'PENDING') {
+      throw new Error('Teacher can only reject pending reservations')
+    }
+    if (!['PENDING', 'APPROVED'].includes(item.status)) {
+      throw new Error('Only pending reservations can be reviewed')
+    }
+    item.status = 'REJECTED'
+    item.reviewComment = payload.comment?.trim() || ''
+    item.reviewerId = user.userId
+    item.reviewerName = user.name
   }
   writeReservations(items)
   return item
@@ -190,7 +210,7 @@ export async function mockCancelReservation(token: string, reservationId: number
   if (item.applicantId !== user.userId) {
     throw new Error('Only the applicant can cancel this reservation')
   }
-  if (item.status !== 'PENDING') {
+  if (!['PENDING', 'APPROVED'].includes(item.status)) {
     throw new Error('Only pending reservations can be cancelled')
   }
   item.status = 'CANCELLED'

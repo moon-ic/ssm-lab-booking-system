@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { getAccessibleMenuItems } from '@/router/access'
 import { useAuthStore } from '@/store/auth'
@@ -72,8 +72,8 @@ const menuItems = computed(() => getAccessibleMenuItems(roleCode.value))
   display: inline-block;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #155e75;
-  background: #cffafe;
+  color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -106,3 +106,4 @@ const menuItems = computed(() => getAccessibleMenuItems(roleCode.value))
   }
 }
 </style>
+

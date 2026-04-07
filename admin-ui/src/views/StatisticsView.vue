@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -42,29 +42,29 @@ const summaryCards = computed(() => {
 
   return [
     {
-      title: '系统设备数',
+      title: '系统设备',
       value: overview.value.deviceTotal,
-      description: '当前工作台内已登记的设备总数。'
+      description: '当前工作台内已登记的设备总数'
     },
     {
       title: '当前可用',
       value: overview.value.availableDeviceTotal,
-      description: '当前可预约或可借用的设备数量。'
+      description: '当前可预约或可借用的设备数量'
     },
     {
       title: '借用中',
       value: overview.value.borrowingTotal,
-      description: '处于借用中或逾期中的记录数。'
+      description: '处于借用中或逾期中的记录数'
     },
     {
       title: '待审核预约',
       value: overview.value.pendingReservationTotal,
-      description: '仍在等待审核的预约申请数量。'
+      description: '仍在等待审核的预约申请数量'
     },
     {
       title: '待处理报修',
       value: overview.value.pendingRepairTotal,
-      description: '仍需处理的维修申请数量。'
+      description: '仍需处理的维修申请数量'
     }
   ]
 })
@@ -158,7 +158,7 @@ onMounted(() => {
       <span class="eyebrow">统计模块</span>
       <h2>概览与排行看板</h2>
       <p>
-        当前页面将 PRD 中的分析范围集中到一个工作台，包含整体概览、热门设备、维修压力和用户违规排行，
+        当前页面将 PRD 中的分析范围集中到一个工作台，包含整体概览、热门设备、维修压力和用户违规排行。
         时间维度与 Top N 设置均与后端约定保持一致。
       </p>
     </section>
@@ -169,7 +169,7 @@ onMounted(() => {
           <ElOption v-for="option in scopeOptions" :key="option.value" :label="option.label" :value="option.value" />
         </ElSelect>
         <ElSelect v-model="query.topN" placeholder="排行数量">
-          <ElOption v-for="count in topNOptions" :key="count" :label="`前 ${count}`" :value="count" />
+          <ElOption v-for="count in topNOptions" :key="count" :label="`前 ${count} 名`" :value="count" />
         </ElSelect>
       </div>
 
@@ -305,8 +305,8 @@ onMounted(() => {
   width: fit-content;
   padding: 6px 10px;
   border-radius: 999px;
-  color: #155e75;
-  background: #cffafe;
+  color: var(--theme-primary);
+  background: var(--theme-primary-soft);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -465,3 +465,5 @@ onMounted(() => {
   }
 }
 </style>
+
+

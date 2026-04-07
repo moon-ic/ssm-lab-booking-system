@@ -68,7 +68,7 @@ class AdminServerApplicationTests {
             throw new IllegalStateException("Expected in-memory cache when Redis is disabled");
         }
 
-        String token = loginAndGetToken("20230001", "000000");
+        String token = loginAndGetToken("20230001", "0000");
         mockMvc.perform(get("/api/auth/me")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -83,7 +83,7 @@ class AdminServerApplicationTests {
                         .content("""
                                 {
                                   "loginId": "20230001",
-                                  "password": "000000"
+                                  "password": "0000"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -107,7 +107,7 @@ class AdminServerApplicationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "oldPassword": "000000",
+                                  "oldPassword": "0000",
                                   "newPassword": "abc000000"
                                 }
                                 """))
@@ -128,7 +128,7 @@ class AdminServerApplicationTests {
 
     @Test
     void firstLoginUserMustChangePasswordBeforeAccessingOtherModules() throws Exception {
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         String createResponse = mockMvc.perform(post("/api/users/students")
                         .header("Authorization", "Bearer " + teacherToken)
@@ -154,7 +154,7 @@ class AdminServerApplicationTests {
                         .content("""
                                 {
                                   "loginId": "20239998",
-                                  "password": "000000"
+                                  "password": "0000"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -181,7 +181,7 @@ class AdminServerApplicationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "oldPassword": "000000",
+                                  "oldPassword": "0000",
                                   "newPassword": "abc000000"
                                 }
                                 """))
@@ -199,14 +199,14 @@ class AdminServerApplicationTests {
 
     @Test
     void resetPasswordForcesFirstLoginAndCreatesMessage() throws Exception {
-        String adminToken = loginAndGetToken("A001", "000000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         mockMvc.perform(put("/api/users/4/reset-password")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "newPassword": "000000"
+                                  "newPassword": "0000"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -217,7 +217,7 @@ class AdminServerApplicationTests {
                         .content("""
                                 {
                                   "loginId": "20230001",
-                                  "password": "000000"
+                                  "password": "0000"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -261,7 +261,7 @@ class AdminServerApplicationTests {
 
     @Test
     void superAdminCanCreateAdminAndAdminCanCreateTeacherAndTeacherCanCreateStudent() throws Exception {
-        String superAdminToken = loginAndGetToken("SA001", "000000");
+        String superAdminToken = loginAndGetToken("SA001", "0000");
         mockMvc.perform(post("/api/users/admins")
                         .header("Authorization", "Bearer " + superAdminToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -277,7 +277,7 @@ class AdminServerApplicationTests {
                 .andExpect(jsonPath("$.data.roleCode").value("ADMIN"))
                 .andExpect(jsonPath("$.data.account").value("admin_a"));
 
-        String adminToken = loginAndGetToken("A001", "000000");
+        String adminToken = loginAndGetToken("A001", "0000");
         mockMvc.perform(post("/api/users/teachers")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -293,7 +293,7 @@ class AdminServerApplicationTests {
                 .andExpect(jsonPath("$.data.roleCode").value("TEACHER"))
                 .andExpect(jsonPath("$.data.jobNoOrStudentNo").value("T2026999"));
 
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
         mockMvc.perform(post("/api/users/students")
                         .header("Authorization", "Bearer " + teacherToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -312,7 +312,7 @@ class AdminServerApplicationTests {
 
     @Test
     void teacherCanOnlySeeManagedStudents() throws Exception {
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
         mockMvc.perform(get("/api/users")
                         .header("Authorization", "Bearer " + teacherToken))
                 .andExpect(status().isOk())
@@ -324,7 +324,7 @@ class AdminServerApplicationTests {
 
     @Test
     void teacherCanViewManagedStudentDetail() throws Exception {
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         mockMvc.perform(get("/api/users/4")
                         .header("Authorization", "Bearer " + teacherToken))
@@ -336,7 +336,7 @@ class AdminServerApplicationTests {
 
     @Test
     void teacherCanDeleteManagedStudentAndDeletedStudentCannotLogin() throws Exception {
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         mockMvc.perform(delete("/api/users/students/4")
                         .header("Authorization", "Bearer " + teacherToken))
@@ -348,7 +348,7 @@ class AdminServerApplicationTests {
                         .content("""
                                 {
                                   "loginId": "20230001",
-                                  "password": "000000"
+                                  "password": "0000"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -357,7 +357,7 @@ class AdminServerApplicationTests {
 
     @Test
     void adminCanDisableTeacherAndDisabledTeacherCannotLogin() throws Exception {
-        String adminToken = loginAndGetToken("A001", "000000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         mockMvc.perform(put("/api/users/3/status")
                         .header("Authorization", "Bearer " + adminToken)
@@ -375,7 +375,7 @@ class AdminServerApplicationTests {
                         .content("""
                                 {
                                   "loginId": "T2026001",
-                                  "password": "000000"
+                                  "password": "0000"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -384,7 +384,7 @@ class AdminServerApplicationTests {
 
     @Test
     void superAdminCanManageRolesAndPermissions() throws Exception {
-        String superAdminToken = loginAndGetToken("SA001", "000000");
+        String superAdminToken = loginAndGetToken("SA001", "0000");
 
         mockMvc.perform(get("/api/roles")
                         .header("Authorization", "Bearer " + superAdminToken))
@@ -455,7 +455,7 @@ class AdminServerApplicationTests {
 
     @Test
     void adminCannotAccessRolePermissionModule() throws Exception {
-        String adminToken = loginAndGetToken("A001", "000000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         mockMvc.perform(get("/api/roles")
                         .header("Authorization", "Bearer " + adminToken))
@@ -470,7 +470,7 @@ class AdminServerApplicationTests {
 
     @Test
     void loggedInUserCanListAndViewDevices() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
 
         mockMvc.perform(get("/api/devices")
                         .header("Authorization", "Bearer " + studentToken)
@@ -490,7 +490,7 @@ class AdminServerApplicationTests {
 
     @Test
     void adminCanCreateUpdateAndDisableDevice() throws Exception {
-        String adminToken = loginAndGetToken("A001", "000000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         String createResponse = mockMvc.perform(post("/api/devices")
                         .header("Authorization", "Bearer " + adminToken)
@@ -549,8 +549,8 @@ class AdminServerApplicationTests {
 
     @Test
     void studentCannotCreateDeviceAndAdminCanImportDevice() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
         MockMultipartFile image = new MockMultipartFile("image", "device.png", "image/png", "fake-image".getBytes());
 
         mockMvc.perform(post("/api/devices")
@@ -591,8 +591,9 @@ class AdminServerApplicationTests {
 
     @Test
     void studentCanCreateReservationAndTeacherCanApproveIt() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         String createResponse = mockMvc.perform(post("/api/reservations")
                         .header("Authorization", "Bearer " + studentToken)
@@ -634,9 +635,26 @@ class AdminServerApplicationTests {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.data.status").value("PICKUP_PENDING"))
+                .andExpect(jsonPath("$.data.status").value("APPROVED"))
                 .andExpect(jsonPath("$.data.reviewerId").value(3))
                 .andExpect(jsonPath("$.data.reviewComment").value("approved"));
+
+        mockMvc.perform(get("/api/devices/1001")
+                        .header("Authorization", "Bearer " + teacherToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("AVAILABLE"));
+
+        mockMvc.perform(put("/api/reservations/" + reservationId + "/approve")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "action": "APPROVE",
+                                  "comment": "final approved"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PICKUP_PENDING"));
 
         mockMvc.perform(get("/api/devices/1001")
                         .header("Authorization", "Bearer " + teacherToken))
@@ -646,9 +664,9 @@ class AdminServerApplicationTests {
 
     @Test
     void reservationConflictCancelAndExpireFlowWorks() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         String firstReservation = mockMvc.perform(post("/api/reservations")
                         .header("Authorization", "Bearer " + studentToken)
@@ -718,6 +736,18 @@ class AdminServerApplicationTests {
                                 }
                                 """))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("APPROVED"));
+
+        mockMvc.perform(put("/api/reservations/" + secondReservationId + "/approve")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "action": "APPROVE",
+                                  "comment": "final ok"
+                                }
+                                """))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("PICKUP_PENDING"));
 
         mockMvc.perform(put("/api/reservations/" + secondReservationId + "/expire")
@@ -738,9 +768,9 @@ class AdminServerApplicationTests {
 
     @Test
     void studentVisibilityAndTeacherRejectRulesAreEnforced() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         String reservationResponse = mockMvc.perform(post("/api/reservations")
                         .header("Authorization", "Bearer " + studentToken)
@@ -800,9 +830,64 @@ class AdminServerApplicationTests {
     }
 
     @Test
+    void teacherApprovalStillRequiresAdminApprovalBeforePickup() throws Exception {
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
+
+        String reservationResponse = mockMvc.perform(post("/api/reservations")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "deviceId": 1001,
+                                  "startTime": "2026-04-02 09:00",
+                                  "endTime": "2026-04-02 18:00",
+                                  "purpose": "two-step approval"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PENDING"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String reservationId = extractField(reservationResponse, "\"reservationId\":(\\d+)");
+
+        mockMvc.perform(put("/api/reservations/" + reservationId + "/approve")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "action": "APPROVE",
+                                  "comment": "teacher approved"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("APPROVED"));
+
+        mockMvc.perform(get("/api/borrow-records")
+                        .header("Authorization", "Bearer " + studentToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(0));
+
+        mockMvc.perform(put("/api/reservations/" + reservationId + "/approve")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "action": "APPROVE",
+                                  "comment": "admin approved"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("PICKUP_PENDING"));
+    }
+
+    @Test
     void approvedReservationCreatesBorrowRecordAndStudentCanPickup() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         String reservationId = createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-02 09:00:00", "2026-04-02 18:00:00", "borrow test");
@@ -823,15 +908,11 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/borrow-records/" + recordId + "/pickup")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "pickupTime": "2026-04-02 09:10:00"
-                                }
-                                """))
+                        .content("{}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.status").value("BORROWING"))
-                .andExpect(jsonPath("$.data.pickupTime").value("2026-04-02 09:10:00"));
+                .andExpect(jsonPath("$.data.pickupTime").isNotEmpty());
 
         mockMvc.perform(get("/api/devices/1001")
                         .header("Authorization", "Bearer " + studentToken))
@@ -841,8 +922,8 @@ class AdminServerApplicationTests {
 
     @Test
     void studentCanReturnBorrowedDeviceAndDeviceBecomesAvailable() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-03 09:00:00", "2026-04-03 18:00:00", "return test");
@@ -856,11 +937,7 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/borrow-records/" + recordId + "/pickup")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "pickupTime": "2026-04-03 09:05:00"
-                                }
-                                """))
+                        .content("{}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("BORROWING"));
 
@@ -886,9 +963,9 @@ class AdminServerApplicationTests {
 
     @Test
     void adminCanMarkBorrowRecordOverdueAndQueryReminderList() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-04 09:00:00", "2026-04-04 18:00:00", "overdue test");
@@ -902,11 +979,7 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/borrow-records/" + recordId + "/pickup")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "pickupTime": "2026-04-04 09:05:00"
-                                }
-                                """))
+                        .content("{}"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(put("/api/borrow-records/" + recordId + "/overdue")
@@ -932,8 +1005,8 @@ class AdminServerApplicationTests {
 
     @Test
     void studentCanSubmitRepairAndTeacherCanSeeManagedRepairs() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         String repairResponse = mockMvc.perform(post("/api/repairs")
                         .header("Authorization", "Bearer " + studentToken)
@@ -976,8 +1049,8 @@ class AdminServerApplicationTests {
 
     @Test
     void adminCanUpdateRepairStatusAndDeviceStatusFollows() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         String repairId = extractField(mockMvc.perform(post("/api/repairs")
                         .header("Authorization", "Bearer " + studentToken)
@@ -1026,8 +1099,8 @@ class AdminServerApplicationTests {
 
     @Test
     void duplicateActiveRepairIsRejectedAndUnrepairableKeepsDamagedStatus() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         String repairId = extractField(mockMvc.perform(post("/api/repairs")
                         .header("Authorization", "Bearer " + studentToken)
@@ -1074,8 +1147,8 @@ class AdminServerApplicationTests {
 
     @Test
     void profileReturnsCurrentUserAndOwnBorrowRecords() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-05 09:00:00", "2026-04-05 18:00:00", "profile test");
@@ -1089,11 +1162,7 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/borrow-records/" + recordId + "/pickup")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "pickupTime": "2026-04-05 09:15:00"
-                                }
-                                """))
+                        .content("{}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("BORROWING"));
 
@@ -1118,9 +1187,9 @@ class AdminServerApplicationTests {
 
     @Test
     void adminCanQueryStatisticsOverviewHotDamageAndViolations() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-06 09:00:00", "2026-04-06 18:00:00", "stats borrow");
@@ -1134,11 +1203,7 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/borrow-records/" + firstRecordId + "/pickup")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "pickupTime": "2026-04-06 09:05:00"
-                                }
-                                """))
+                        .content("{}"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(put("/api/borrow-records/" + firstRecordId + "/overdue")
@@ -1247,8 +1312,8 @@ class AdminServerApplicationTests {
 
     @Test
     void superAdminCanManageMenusAndIconsButAdminCannot() throws Exception {
-        String superAdminToken = loginAndGetToken("SA001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String superAdminToken = loginAndGetToken("SA001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         mockMvc.perform(get("/api/icons")
                         .header("Authorization", "Bearer " + superAdminToken))
@@ -1293,9 +1358,9 @@ class AdminServerApplicationTests {
 
     @Test
     void systemTaskCanExpireUnpickedReservations() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         String reservationId = createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-01 09:00:00", "2026-04-01 10:00:00", "task expire");
@@ -1318,8 +1383,8 @@ class AdminServerApplicationTests {
 
     @Test
     void systemTaskCanMarkOverdueRecordsAndGenerateReminderSummary() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-03 09:00:00", "2026-04-03 10:00:00", "task overdue");
@@ -1333,15 +1398,11 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/borrow-records/" + overdueRecordId + "/pickup")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "pickupTime": "2026-04-03 09:05:00"
-                                }
-                                """))
+                        .content("{}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("BORROWING"));
 
-        String adminToken = loginAndGetToken("A001", "000000");
+        String adminToken = loginAndGetToken("A001", "0000");
         String newDeviceResponse = mockMvc.perform(post("/api/devices")
                         .header("Authorization", "Bearer " + adminToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1373,11 +1434,7 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/borrow-records/" + aboutToExpireRecordId + "/pickup")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "pickupTime": "2026-04-04 09:05:00"
-                                }
-                                """))
+                        .content("{}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.status").value("BORROWING"));
 
@@ -1401,9 +1458,9 @@ class AdminServerApplicationTests {
 
     @Test
     void notificationCenterAndTaskLogsWorkAfterSystemTasks() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-01 09:00:00", "2026-04-01 10:00:00", "notify task");
@@ -1492,8 +1549,8 @@ class AdminServerApplicationTests {
 
     @Test
     void directMessageConfirmEndpointWorks() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
 
         createAndApproveReservation(studentToken, teacherToken,
                 "2026-04-01 09:00:00", "2026-04-01 10:00:00", "direct confirm");
@@ -1522,9 +1579,9 @@ class AdminServerApplicationTests {
 
     @Test
     void statisticsSupportHalfYearAndMonthScopes() throws Exception {
-        String studentToken = loginAndGetToken("20230001", "000000");
-        String teacherToken = loginAndGetToken("T2026001", "000000");
-        String adminToken = loginAndGetToken("A001", "000000");
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
 
         createAndApproveReservation(studentToken, teacherToken,
                 "2026-03-29 09:00:00", "2026-03-29 10:00:00", "scope stats");
@@ -1538,11 +1595,7 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/borrow-records/" + recordId + "/pickup")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "pickupTime": "2026-03-29 09:05:00"
-                                }
-                                """))
+                        .content("{}"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(put("/api/borrow-records/" + recordId + "/overdue")
@@ -1615,6 +1668,8 @@ class AdminServerApplicationTests {
     }
 
     private String createAndApproveReservation(String studentToken, String teacherToken, String startTime, String endTime, String purpose, String deviceId) throws Exception {
+        String adminToken = loginAndGetToken("A001", "0000");
+
         String reservationResponse = mockMvc.perform(post("/api/reservations")
                         .header("Authorization", "Bearer " + studentToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -1637,10 +1692,23 @@ class AdminServerApplicationTests {
         mockMvc.perform(put("/api/reservations/" + reservationId + "/approve")
                         .header("Authorization", "Bearer " + teacherToken)
                         .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                                {
+                                  "action": "APPROVE",
+                                  "comment": "teacher approved"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.status").value("APPROVED"));
+
+        mockMvc.perform(put("/api/reservations/" + reservationId + "/approve")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "action": "APPROVE",
-                                  "comment": "approved"
+                                  "comment": "admin approved"
                                 }
                                 """))
                 .andExpect(status().isOk())

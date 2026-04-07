@@ -58,10 +58,10 @@ function fillDemo(loginId: string, password: string) {
         场景，便于前后端并行开发。
       </p>
       <div class="demo-panel">
-        <button type="button" @click="fillDemo('SA001', '000000')">超级管理员：SA001 / 000000</button>
-        <button type="button" @click="fillDemo('A001', '000000')">管理员：A001 / 000000</button>
-        <button type="button" @click="fillDemo('T2026001', '000000')">教师：T2026001 / 000000</button>
-        <button type="button" @click="fillDemo('20230001', '000000')">学生：20230001 / 000000</button>
+        <button type="button" @click="fillDemo('SA001', '0000')">超级管理员：SA001 / 0000</button>
+        <button type="button" @click="fillDemo('A001', '0000')">管理员：A001 / 0000</button>
+        <button type="button" @click="fillDemo('T2026001', '0000')">教师：T2026001 / 0000</button>
+        <button type="button" @click="fillDemo('20230001', '0000')">学生：20230001 / 0000</button>
       </div>
     </section>
 
@@ -123,10 +123,11 @@ function fillDemo(loginId: string, password: string) {
   justify-content: center;
   min-height: 640px;
   padding: 56px;
-  color: #eff6ff;
+  color: #f8fbff;
   background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.24), transparent 30%),
-    linear-gradient(140deg, #0f172a 0%, #0f766e 52%, #f59e0b 100%);
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(224, 233, 246, 0.3), transparent 28%),
+    linear-gradient(140deg, #4b83cd 0%, #91b3e0 100%);
 }
 
 .login-badge {
@@ -134,7 +135,8 @@ function fillDemo(loginId: string, password: string) {
   width: fit-content;
   padding: 8px 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.16);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -152,7 +154,7 @@ function fillDemo(loginId: string, password: string) {
   margin: 0;
   font-size: 17px;
   line-height: 1.8;
-  color: rgba(239, 246, 255, 0.86);
+  color: rgba(248, 251, 255, 0.9);
 }
 
 .demo-panel {
@@ -170,7 +172,7 @@ function fillDemo(loginId: string, password: string) {
   text-align: left;
   font: inherit;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.14);
   transition:
     transform 0.2s ease,
     background 0.2s ease;
@@ -178,26 +180,27 @@ function fillDemo(loginId: string, password: string) {
 
 .demo-panel button:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .login-card {
   align-self: center;
   padding: 36px 32px;
-  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(75, 131, 205, 0.18);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(18px);
 }
 
 .card-header h2 {
   margin: 0;
   font-size: 30px;
-  color: #0f172a;
+  color: var(--theme-text);
 }
 
 .card-header p {
   margin: 10px 0 24px;
   line-height: 1.7;
-  color: #64748b;
+  color: var(--theme-text-soft);
 }
 
 .submit-button {
@@ -208,7 +211,7 @@ function fillDemo(loginId: string, password: string) {
 .login-tips {
   margin: 24px 0 0;
   padding-left: 18px;
-  color: #475569;
+  color: var(--theme-text-soft);
   line-height: 1.8;
 }
 

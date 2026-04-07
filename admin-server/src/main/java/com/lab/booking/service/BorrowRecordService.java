@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,7 +29,8 @@ import java.util.Objects;
 @Service
 public class BorrowRecordService {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter SECOND_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter MINUTE_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final BorrowRecordRepository borrowRecordRepository;
     private final ReservationRepository reservationRepository;
@@ -94,19 +96,18 @@ public class BorrowRecordService {
         UserEntity currentUser = requireRoles(RoleCode.STUDENT);
         BorrowRecordEntity record = getExistingRecord(recordId);
         if (!Objects.equals(record.getUserId(), currentUser.getUserId())) {
-            throw new ApiException(403, "仅本人可确认取用");
+            throw new ApiException(403, "仅本人可确认领取");
         }
         if (record.getStatus() != BorrowStatus.PICKUP_PENDING) {
-            throw new ApiException(409, "当前借用记录状态不可取用");
+            throw new ApiException(409, "当前借用记录状态不可领取");
         }
 
         ReservationEntity reservation = getExistingReservation(record.getReservationId());
-        if (reservation.getStatus() != ReservationStatus.APPROVED && reservation.getStatus() != ReservationStatus.PICKUP_PENDING) {
-            throw new ApiException(409, "当前预约状态不可取用");
+        if (reservation.getStatus() != ReservationStatus.PICKUP_PENDING) {
+            throw new ApiException(409, "当前预约状态不可领取");
         }
 
-        LocalDateTime pickupTime = parseDateTime(request.pickupTime(), "pickupTime");
-        record.setPickupTime(pickupTime);
+        record.setPickupTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
         record.setStatus(BorrowStatus.BORROWING);
         borrowRecordRepository.save(record);
 
@@ -175,6 +176,11 @@ public class BorrowRecordService {
     }
 
     public void createPendingRecordFromReservation(ReservationEntity reservation) {
+        boolean exists = borrowRecordRepository.findByReservationId(reservation.getReservationId()).isPresent();
+        if (exists) {
+            return;
+        }
+
         BorrowRecordEntity record = new BorrowRecordEntity();
         record.setRecordId(borrowRecordRepository.nextRecordId());
         record.setReservationId(reservation.getReservationId());
@@ -262,14 +268,22 @@ public class BorrowRecordService {
     }
 
     private LocalDateTime parseDateTime(String value, String fieldName) {
+        String actualValue = value == null ? "" : value.trim();
+        if (actualValue.isEmpty()) {
+            throw new ApiException(400, fieldName + " 时间不能为空");
+        }
         try {
-            return LocalDateTime.parse(value.trim(), DATE_TIME_FORMATTER);
+            return LocalDateTime.parse(actualValue, SECOND_DATE_TIME_FORMATTER);
         } catch (DateTimeParseException ex) {
-            throw new ApiException(400, fieldName + " 时间格式错误，需为 yyyy-MM-dd HH:mm:ss");
+            try {
+                return LocalDateTime.parse(actualValue, MINUTE_DATE_TIME_FORMATTER);
+            } catch (DateTimeParseException ignored) {
+                throw new ApiException(400, fieldName + " 时间格式错误，需要 yyyy-MM-dd HH:mm");
+            }
         }
     }
 
     private String formatDateTime(LocalDateTime dateTime) {
-        return dateTime == null ? null : dateTime.format(DATE_TIME_FORMATTER);
+        return dateTime == null ? null : dateTime.format(MINUTE_DATE_TIME_FORMATTER);
     }
 }

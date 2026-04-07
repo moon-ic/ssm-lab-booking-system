@@ -7,7 +7,7 @@ public final class BorrowRecordDtos {
     private BorrowRecordDtos() {
     }
 
-    public record PickupRequest(@NotBlank String pickupTime) {
+    public record PickupRequest() {
     }
 
     public record ReturnRequest(
