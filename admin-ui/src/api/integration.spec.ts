@@ -2,7 +2,6 @@ import { changePassword, getCurrentUser, login } from '@/api/auth'
 import { listBorrowRecords, listBorrowReminders, markBorrowRecordOverdue, pickupBorrowRecord, returnBorrowRecord } from '@/api/borrow-records'
 import { importDevice } from '@/api/device-imports'
 import { createDevice, getDeviceDetail, listDevices, updateDevice, updateDeviceStatus } from '@/api/devices'
-import { listIcons, listMenuConfigs, updateMenuConfig } from '@/api/menu-config'
 import { confirmMessage, listMessages, unconfirmedSummary } from '@/api/messages'
 import { confirmMyMessage, getProfile, listMyBorrowRecords, listMyMessages } from '@/api/profile'
 import { createRepair, getRepairDetail, listRepairs, updateRepairStatus } from '@/api/repairs'
@@ -12,8 +11,12 @@ import { deviceDamageStatistics, hotDevices, statisticsOverview, userViolationSt
 import { createAdmin, createStudent, createTeacher, deleteStudent, getUserDetail, listUsers, resetPassword, updateUserStatus } from '@/api/users'
 
 describe('api integration with mock backend', () => {
-  it('covers auth, user, role, and menu configuration flows', async () => {
-    const superAdminSession = await login({ loginId: 'admin', password: '000000' })
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('covers auth, user, and role assignment flows', async () => {
+    const superAdminSession = await login({ loginId: 'SA001', password: '0000' })
     localStorage.setItem('admin-auth-session', JSON.stringify(superAdminSession))
 
     const me = await getCurrentUser(superAdminSession.token)
@@ -49,34 +52,21 @@ describe('api integration with mock backend', () => {
 
     const roleDetail = await getRoleDetail(createdRole.roleId)
     expect(roleDetail.menuIds).toHaveLength(2)
-
-    const menuConfigs = await listMenuConfigs()
-    expect(menuConfigs.length).toBeGreaterThan(5)
-    const icons = await listIcons()
-    expect(icons).toContain('Setting')
-
-    const updatedMenu = await updateMenuConfig(205, {
-      menuName: 'Device Center',
-      path: '/device-center',
-      icon: 'Setting',
-      permissionCode: 'device:view'
-    })
-    expect(updatedMenu.menuName).toBe('Device Center')
   })
 
   it('covers admin, teacher, and student flows across users, devices, reservations, borrow records, repairs, profile, and messages', async () => {
-    const superAdminSession = await login({ loginId: 'admin', password: '000000' })
+    const superAdminSession = await login({ loginId: 'SA001', password: '0000' })
     localStorage.setItem('admin-auth-session', JSON.stringify(superAdminSession))
     const admin = await createAdmin({ name: 'Admin Flow', account: 'admin_flow', phone: '13800001222' })
 
     await resetPassword(4, { newPassword: '000000' })
     await updateUserStatus(3, { status: 'ENABLED' })
 
-    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: admin.account, password: '000000' })))
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: admin.account, password: '0000' })))
     const teacher = await createTeacher({ name: 'Teacher Flow', jobNo: 'T2026888', phone: '13800001333' })
     expect(teacher.roleCode).toBe('TEACHER')
 
-    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'admin_flow', password: '000000' })))
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'admin_flow', password: '0000' })))
     const device = await createDevice({
       deviceName: 'Flow Camera',
       deviceCode: 'EQ-2026-1888',
@@ -105,14 +95,14 @@ describe('api integration with mock backend', () => {
     })
     expect(imported.status).toBe('AVAILABLE')
 
-    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'T2026888', password: '000000' })))
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'T2026888', password: '0000' })))
     const student = await createStudent({ name: 'Student Flow', studentNo: '20245555', phone: '13800001444' })
     expect(student.roleCode).toBe('STUDENT')
     expect((await getUserDetail(student.userId)).jobNoOrStudentNo).toBe('20245555')
 
-    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: '20245555', password: '000000' })))
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: '20245555', password: '0000' })))
     await changePassword(localStorage.getItem('admin-auth-session') ? JSON.parse(localStorage.getItem('admin-auth-session')!).token : '', {
-      oldPassword: '000000',
+      oldPassword: '0000',
       newPassword: 'password123'
     })
 
@@ -126,10 +116,10 @@ describe('api integration with mock backend', () => {
     })
     expect((await getReservationDetail(reservation.reservationId)).status).toBe('PENDING')
 
-    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'T2026888', password: '000000' })))
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'T2026888', password: '0000' })))
     const teacherApproved = await approveReservation(reservation.reservationId, { action: 'APPROVE', comment: 'teacher approved' })
     expect(teacherApproved.status).toBe('APPROVED')
-    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'admin_flow', password: '000000' })))
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'admin_flow', password: '0000' })))
     const approved = await approveReservation(reservation.reservationId, { action: 'APPROVE', comment: 'admin approved' })
     expect(approved.status).toBe('PICKUP_PENDING')
     expect((await listReservations({ pageNum: 1, pageSize: 20 })).list.some((item) => item.reservationId === reservation.reservationId)).toBe(true)
@@ -161,7 +151,7 @@ describe('api integration with mock backend', () => {
       expect(confirmed.confirmStatus).toBe('CONFIRMED')
     }
 
-    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'admin_flow', password: '000000' })))
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'admin_flow', password: '0000' })))
     const overdueTarget = (await listBorrowRecords({ pageNum: 1, pageSize: 20 })).list.find((item) => item.recordId === record.recordId)
     expect(overdueTarget).toBeTruthy()
     await markBorrowRecordOverdue(record.recordId)
@@ -195,7 +185,7 @@ describe('api integration with mock backend', () => {
     await cancelReservation(cancelledReservation.reservationId)
     expect((await getReservationDetail(cancelledReservation.reservationId)).status).toBe('CANCELLED')
 
-    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'T2026888', password: '000000' })))
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'T2026888', password: '0000' })))
     await deleteStudent(student.userId)
     const teacherUsers = await listUsers({ pageNum: 1, pageSize: 50 })
     expect(teacherUsers.list.some((item) => item.userId === student.userId)).toBe(false)

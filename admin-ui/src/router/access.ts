@@ -56,16 +56,6 @@ export const appRouteChildren: RouteRecordRaw[] = [
         } satisfies AppRouteMeta
     },
     {
-        path: "borrow-records",
-        name: "borrow-records",
-        component: () => import("@/views/BorrowRecordManagementView.vue"),
-        meta: {
-            title: "借用记录",
-            menu: true,
-            roles: ["SUPER_ADMIN", "ADMIN", "TEACHER", "STUDENT"]
-        } satisfies AppRouteMeta
-    },
-    {
         path: "messages",
         name: "messages",
         component: () => import("@/views/MessageCenterView.vue"),
@@ -111,16 +101,6 @@ export const appRouteChildren: RouteRecordRaw[] = [
         component: () => import("@/views/RolePermissionView.vue"),
         meta: {
             title: "角色权限",
-            menu: true,
-            roles: ["SUPER_ADMIN"]
-        } satisfies AppRouteMeta
-    },
-    {
-        path: "menu-config",
-        name: "menu-config",
-        component: () => import("@/views/MenuConfigView.vue"),
-        meta: {
-            title: "菜单配置",
             menu: true,
             roles: ["SUPER_ADMIN"]
         } satisfies AppRouteMeta

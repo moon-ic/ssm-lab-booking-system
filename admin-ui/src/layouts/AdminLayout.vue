@@ -17,6 +17,7 @@ const displayName = computed(
 const roleCode = computed(
     () => authStore.state.currentUser?.roleCode ?? authStore.state.session?.userInfo.roleCode ?? "--"
 );
+const profileInitial = computed(() => displayName.value.trim().charAt(0).toUpperCase() || "U");
 const firstLoginRequired = computed(() => Boolean(authStore.state.session?.firstLoginRequired));
 const menuItems = computed(() => getAccessibleMenuItems(roleCode.value));
 const summaryState = ref<{ total: number } | null>(null);
@@ -53,6 +54,14 @@ async function goToMessages() {
     await router.push("/messages");
 }
 
+async function goToProfile() {
+    if (route.path === "/profile") {
+        return;
+    }
+
+    await router.push("/profile");
+}
+
 onMounted(() => {
     void loadMessageSummary();
 });
@@ -70,7 +79,7 @@ watch(
         <aside class="layout-sidebar">
             <div class="brand">
                 <strong>实验室后台</strong>
-                <span>按角色显示导航</span>
+                <span>菜单已按角色固定配置</span>
             </div>
 
             <nav class="nav-list">
@@ -103,17 +112,20 @@ watch(
                         <span v-if="unreadTotal > 0" class="message-dot" />
                     </button>
 
-                    <div class="user-card">
-                        <strong>{{ displayName }}</strong>
-                        <span>{{ roleCode }}</span>
-                    </div>
+                    <button class="profile-entry" type="button" aria-label="进入个人中心" @click="goToProfile">
+                        <span class="avatar-chip" aria-hidden="true">{{ profileInitial }}</span>
+                        <span class="user-card">
+                            <strong>{{ displayName }}</strong>
+                            <span>{{ roleCode }}</span>
+                        </span>
+                    </button>
 
                     <button class="logout-button" type="button" @click="handleLogout">退出登录</button>
                 </div>
             </header>
 
             <section v-if="firstLoginRequired" class="first-login-banner">
-                当前仍处于首次登录状态，修改密码前仅可访问首页。
+                当前仍处于首次登录状态，修改密码前仅可访问首页与个人中心。
             </section>
 
             <section class="layout-content">
@@ -224,6 +236,7 @@ watch(
 }
 
 .message-button,
+.profile-entry,
 .logout-button {
     display: inline-flex;
     align-items: center;
@@ -258,14 +271,33 @@ watch(
     box-shadow: 0 0 0 2px #fff;
 }
 
+.profile-entry {
+    gap: 12px;
+    padding: 8px 10px 8px 8px;
+    border-radius: 20px;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 14px 30px rgba(43, 76, 120, 0.1);
+}
+
+.avatar-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    color: #1d4f8f;
+    background: rgba(255, 255, 255, 0.92);
+    font-size: 18px;
+    font-weight: 800;
+}
+
 .user-card {
     display: grid;
     gap: 4px;
     min-width: 148px;
-    padding: 12px 16px;
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.16);
-    box-shadow: 0 14px 30px rgba(43, 76, 120, 0.1);
+    text-align: left;
 }
 
 .user-card span {

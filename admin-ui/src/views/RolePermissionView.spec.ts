@@ -99,18 +99,18 @@ describe('RolePermissionView', () => {
     const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Role Module')
+    expect(wrapper.text()).toContain('角色模块')
     expect(wrapper.text()).toContain('Admin')
     expect(wrapper.text()).toContain('View users')
 
-    await findButton(wrapper, 'New Role')?.trigger('click')
+    await findButton(wrapper, '新建角色')?.trigger('click')
 
     const inputs = wrapper.findAll('input')
     await inputs[0].setValue('Auditor')
     await inputs[1].setValue('AUDITOR')
     await inputs[2].setValue('Review only')
 
-    await findButton(wrapper, 'Save')?.trigger('click')
+    await findButton(wrapper, '保存')?.trigger('click')
     await flushPromises()
 
     expect(createRoleMock).toHaveBeenCalledWith({
