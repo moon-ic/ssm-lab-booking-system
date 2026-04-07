@@ -91,7 +91,7 @@ public class RepairService {
         UserEntity currentUser = requireRoles(RoleCode.SUPER_ADMIN, RoleCode.ADMIN, RoleCode.TEACHER, RoleCode.STUDENT);
         RepairEntity repair = getExistingRepair(repairId);
         if (!visibleTo(currentUser, repair)) {
-            throw new ApiException(403, "无权限访问");
+            throw new ApiException(403, "权限不够");
         }
         return toRepairView(repair);
     }
@@ -122,7 +122,7 @@ public class RepairService {
                         && repair.getStatus() != RepairStatus.COMPLETED
                         && repair.getStatus() != RepairStatus.UNREPAIRABLE);
         if (activeRepairExists) {
-            throw new ApiException(409, "该设备已有进行中的维修申请");
+            throw new ApiException(409, "该设备已存在进行中的维修申请");
         }
     }
 
@@ -148,6 +148,10 @@ public class RepairService {
                 .orElseThrow(() -> new ApiException(404, "设备不存在"));
     }
 
+    private DeviceEntity findDevice(Long deviceId) {
+        return deviceRepository.findById(deviceId).orElse(null);
+    }
+
     private UserEntity getExistingUser(Long userId) {
         return authRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(404, "用户不存在"));
@@ -160,16 +164,16 @@ public class RepairService {
                 return currentUser;
             }
         }
-        throw new ApiException(403, "无权限访问");
+        throw new ApiException(403, "权限不够");
     }
 
     private Map<String, Object> toRepairView(RepairEntity repair) {
         UserEntity applicant = getExistingUser(repair.getApplicantId());
-        DeviceEntity device = getExistingDevice(repair.getDeviceId());
+        DeviceEntity device = findDevice(repair.getDeviceId());
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("repairId", repair.getRepairId());
         result.put("deviceId", repair.getDeviceId());
-        result.put("deviceName", device.getDeviceName());
+        result.put("deviceName", device == null ? "已删除设备 #" + repair.getDeviceId() : device.getDeviceName());
         result.put("applicantId", repair.getApplicantId());
         result.put("applicantName", applicant.getName());
         result.put("description", repair.getDescription());

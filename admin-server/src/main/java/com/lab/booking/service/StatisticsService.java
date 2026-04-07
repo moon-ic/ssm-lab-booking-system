@@ -73,12 +73,12 @@ public class StatisticsService {
                 .sorted(Map.Entry.<Long, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
                 .limit(actualTopN)
                 .map(entry -> {
-                    DeviceEntity device = getDevice(entry.getKey());
+                    DeviceEntity device = findDevice(entry.getKey());
                     Map<String, Object> result = new LinkedHashMap<>();
-                    result.put("deviceId", device.getDeviceId());
-                    result.put("deviceName", device.getDeviceName());
-                    result.put("deviceCode", device.getDeviceCode());
-                    result.put("imageUrl", device.getImageUrl());
+                    result.put("deviceId", entry.getKey());
+                    result.put("deviceName", device == null ? "已删除设备 #" + entry.getKey() : device.getDeviceName());
+                    result.put("deviceCode", device == null ? null : device.getDeviceCode());
+                    result.put("imageUrl", device == null ? null : device.getImageUrl());
                     result.put("borrowCount", entry.getValue());
                     result.put("rankScope", range.scope().name());
                     return result;
@@ -204,9 +204,8 @@ public class StatisticsService {
         return topN == null || topN < 1 ? 10 : topN;
     }
 
-    private DeviceEntity getDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId)
-                .orElseThrow(() -> new ApiException(404, "设备不存在"));
+    private DeviceEntity findDevice(Long deviceId) {
+        return deviceRepository.findById(deviceId).orElse(null);
     }
 
     private DateRange resolveRange(String startDate, String endDate, RankScope rankScope) {
@@ -255,7 +254,7 @@ public class StatisticsService {
     private void requireAdmin() {
         UserEntity currentUser = authService.currentUser();
         if (currentUser.getRoleCode() != RoleCode.ADMIN && currentUser.getRoleCode() != RoleCode.SUPER_ADMIN) {
-            throw new ApiException(403, "无权限访问");
+            throw new ApiException(403, "权限不够");
         }
     }
 

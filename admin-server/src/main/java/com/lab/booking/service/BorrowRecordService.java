@@ -234,6 +234,10 @@ public class BorrowRecordService {
                 .orElseThrow(() -> new ApiException(404, "设备不存在"));
     }
 
+    private DeviceEntity findDevice(Long deviceId) {
+        return deviceRepository.findById(deviceId).orElse(null);
+    }
+
     private UserEntity getExistingUser(Long userId) {
         return authRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(404, "用户不存在"));
@@ -246,19 +250,19 @@ public class BorrowRecordService {
                 return currentUser;
             }
         }
-        throw new ApiException(403, "无权限访问");
+        throw new ApiException(403, "权限不够");
     }
 
     private Map<String, Object> toRecordView(BorrowRecordEntity record) {
         UserEntity applicant = getExistingUser(record.getUserId());
-        DeviceEntity device = getExistingDevice(record.getDeviceId());
+        DeviceEntity device = findDevice(record.getDeviceId());
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("recordId", record.getRecordId());
         result.put("reservationId", record.getReservationId());
         result.put("userId", record.getUserId());
         result.put("userName", applicant.getName());
         result.put("deviceId", record.getDeviceId());
-        result.put("deviceName", device.getDeviceName());
+        result.put("deviceName", device == null ? "已删除设备 #" + record.getDeviceId() : device.getDeviceName());
         result.put("status", record.getStatus());
         result.put("pickupTime", formatDateTime(record.getPickupTime()));
         result.put("expectedReturnTime", formatDateTime(record.getExpectedReturnTime()));

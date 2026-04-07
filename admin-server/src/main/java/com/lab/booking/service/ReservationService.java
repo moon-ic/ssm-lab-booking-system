@@ -109,7 +109,7 @@ public class ReservationService {
         UserEntity currentUser = requireRoles(RoleCode.SUPER_ADMIN, RoleCode.ADMIN, RoleCode.TEACHER, RoleCode.STUDENT);
         ReservationEntity reservation = getExistingReservation(reservationId);
         if (!visibleTo(currentUser, reservation)) {
-            throw new ApiException(403, "无权限访问");
+            throw new ApiException(403, "权限不够");
         }
         return toReservationDetail(reservation);
     }
@@ -118,7 +118,7 @@ public class ReservationService {
         UserEntity reviewer = requireRoles(RoleCode.SUPER_ADMIN, RoleCode.ADMIN, RoleCode.TEACHER);
         ReservationEntity reservation = getExistingReservation(reservationId);
         if (reviewer.getRoleCode() == RoleCode.TEACHER && !visibleTo(reviewer, reservation)) {
-            throw new ApiException(403, "无权限审核该预约");
+            throw new ApiException(403, "权限不够，不能审核该预约");
         }
         if (reservation.getStatus() != ReservationStatus.PENDING && reservation.getStatus() != ReservationStatus.APPROVED) {
             throw new ApiException(409, "当前预约状态不可审核");
@@ -274,6 +274,10 @@ public class ReservationService {
                 .orElseThrow(() -> new ApiException(404, "设备不存在"));
     }
 
+    private DeviceEntity findDevice(Long deviceId) {
+        return deviceRepository.findById(deviceId).orElse(null);
+    }
+
     private UserEntity getExistingUser(Long userId) {
         return authRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(404, "用户不存在"));
@@ -286,7 +290,7 @@ public class ReservationService {
                 return currentUser;
             }
         }
-        throw new ApiException(403, "无权限访问");
+        throw new ApiException(403, "权限不够");
     }
 
     private boolean visibleTo(UserEntity currentUser, ReservationEntity reservation) {
@@ -304,10 +308,10 @@ public class ReservationService {
     private Map<String, Object> toReservationSummary(ReservationEntity reservation) {
         Map<String, Object> result = new LinkedHashMap<>();
         UserEntity applicant = getExistingUser(reservation.getApplicantId());
-        DeviceEntity device = getExistingDevice(reservation.getDeviceId());
+        DeviceEntity device = findDevice(reservation.getDeviceId());
         result.put("reservationId", reservation.getReservationId());
         result.put("deviceId", reservation.getDeviceId());
-        result.put("deviceName", device.getDeviceName());
+        result.put("deviceName", device == null ? "已删除设备 #" + reservation.getDeviceId() : device.getDeviceName());
         result.put("applicantId", reservation.getApplicantId());
         result.put("applicantName", applicant.getName());
         result.put("startTime", formatDateTime(reservation.getStartTime()));

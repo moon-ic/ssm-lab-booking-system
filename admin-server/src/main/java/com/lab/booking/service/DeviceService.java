@@ -6,7 +6,10 @@ import com.lab.booking.model.DeviceEntity;
 import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.UserEntity;
+import com.lab.booking.repository.BorrowRecordRepository;
 import com.lab.booking.repository.DeviceRepository;
+import com.lab.booking.repository.RepairRepository;
+import com.lab.booking.repository.ReservationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,15 +31,24 @@ import java.util.Map;
 public class DeviceService {
 
     private final DeviceRepository deviceRepository;
+    private final BorrowRecordRepository borrowRecordRepository;
+    private final ReservationRepository reservationRepository;
+    private final RepairRepository repairRepository;
     private final AuthService authService;
     private final Path deviceUploadDir;
 
     public DeviceService(
             DeviceRepository deviceRepository,
+            BorrowRecordRepository borrowRecordRepository,
+            ReservationRepository reservationRepository,
+            RepairRepository repairRepository,
             AuthService authService,
             @Value("${app.storage.upload-dir:${user.dir}/uploads}") String uploadDir
     ) {
         this.deviceRepository = deviceRepository;
+        this.borrowRecordRepository = borrowRecordRepository;
+        this.reservationRepository = reservationRepository;
+        this.repairRepository = repairRepository;
         this.authService = authService;
         this.deviceUploadDir = Path.of(uploadDir, "devices").toAbsolutePath().normalize();
     }
@@ -109,6 +121,7 @@ public class DeviceService {
     public void deleteDevice(Long deviceId) {
         requireSuperAdmin();
         DeviceEntity device = getExistingDevice(deviceId);
+        ensureNoRelatedHistory(deviceId);
         deleteStoredImageIfPresent(device.getImageUrl());
         deviceRepository.deleteById(deviceId);
     }
@@ -150,14 +163,27 @@ public class DeviceService {
     private void requireAdmin() {
         UserEntity currentUser = authService.currentUser();
         if (currentUser.getRoleCode() != RoleCode.ADMIN && currentUser.getRoleCode() != RoleCode.SUPER_ADMIN) {
-            throw new ApiException(403, "无权限访问");
+            throw new ApiException(403, "权限不够");
         }
     }
 
     private void requireSuperAdmin() {
         UserEntity currentUser = authService.currentUser();
         if (currentUser.getRoleCode() != RoleCode.SUPER_ADMIN) {
-            throw new ApiException(403, "Only super admin can delete devices");
+            throw new ApiException(403, "只有超级管理员可以删除设备");
+        }
+    }
+
+    private void ensureNoRelatedHistory(Long deviceId) {
+        boolean relatedReservationExists = reservationRepository.findAll().stream()
+                .anyMatch(item -> deviceId.equals(item.getDeviceId()));
+        boolean relatedBorrowRecordExists = borrowRecordRepository.findAll().stream()
+                .anyMatch(item -> deviceId.equals(item.getDeviceId()));
+        boolean relatedRepairExists = repairRepository.findAll().stream()
+                .anyMatch(item -> deviceId.equals(item.getDeviceId()));
+
+        if (relatedReservationExists || relatedBorrowRecordExists || relatedRepairExists) {
+            throw new ApiException(409, "设备已有关联的预约、借用或维修记录，请改为停用而不是删除");
         }
     }
 
