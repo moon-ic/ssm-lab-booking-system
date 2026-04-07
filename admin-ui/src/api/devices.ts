@@ -2,6 +2,7 @@ import request, { resolveApiAssetUrl, toApiAssetPath } from '@/api/request'
 import {
   deviceStatusOptions,
   mockCreateDevice,
+  mockDeleteDevice,
   mockGetDeviceDetail,
   mockListDevices,
   mockUpdateDevice,
@@ -103,6 +104,17 @@ export async function updateDeviceStatus(deviceId: number, payload: UpdateDevice
 
   await unwrapResult(
     request.put<ApiResult<null>>(`/api/devices/${deviceId}/status`, payload)
+  )
+}
+
+export async function deleteDevice(deviceId: number) {
+  if (useMock) {
+    await mockDeleteDevice(getSessionToken(), deviceId)
+    return
+  }
+
+  await unwrapResult(
+    request.delete<ApiResult<null>>(`/api/devices/${deviceId}`)
   )
 }
 

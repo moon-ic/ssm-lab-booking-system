@@ -179,6 +179,22 @@ export async function mockUpdateDeviceStatus(token: string, deviceId: number, pa
   writeDevices(devices)
 }
 
+export async function mockDeleteDevice(token: string, deviceId: number) {
+  await wait(180)
+
+  if (currentUserRole(token) !== 'SUPER_ADMIN') {
+    throw new Error('Only super admin can delete devices')
+  }
+
+  const devices = readDevices()
+  const nextDevices = devices.filter((item) => item.deviceId !== deviceId)
+  if (nextDevices.length === devices.length) {
+    throw new Error('Device not found')
+  }
+
+  writeDevices(nextDevices)
+}
+
 export async function mockImportDevice(
   token: string,
   payload: {

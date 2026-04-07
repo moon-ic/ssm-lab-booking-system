@@ -16,6 +16,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -105,6 +106,13 @@ public class DeviceService {
         deviceRepository.save(device);
     }
 
+    public void deleteDevice(Long deviceId) {
+        requireSuperAdmin();
+        DeviceEntity device = getExistingDevice(deviceId);
+        deleteStoredImageIfPresent(device.getImageUrl());
+        deviceRepository.deleteById(deviceId);
+    }
+
     public Map<String, Object> importDevice(String deviceName, String category, String location, String description, MultipartFile image) {
         requireAdmin();
         if (deviceName == null || deviceName.isBlank()) {
@@ -143,6 +151,13 @@ public class DeviceService {
         UserEntity currentUser = authService.currentUser();
         if (currentUser.getRoleCode() != RoleCode.ADMIN && currentUser.getRoleCode() != RoleCode.SUPER_ADMIN) {
             throw new ApiException(403, "无权限访问");
+        }
+    }
+
+    private void requireSuperAdmin() {
+        UserEntity currentUser = authService.currentUser();
+        if (currentUser.getRoleCode() != RoleCode.SUPER_ADMIN) {
+            throw new ApiException(403, "Only super admin can delete devices");
         }
     }
 
@@ -224,5 +239,23 @@ public class DeviceService {
                 ? "device.png"
                 : originalFilename.replaceAll("[^A-Za-z0-9._-]", "_");
         return deviceId + "-" + safeName;
+    }
+
+    private void deleteStoredImageIfPresent(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank() || !imageUrl.startsWith("/uploads/devices/")) {
+            return;
+        }
+
+        String relativeName = imageUrl.substring("/uploads/devices/".length());
+        Path target = deviceUploadDir.resolve(Paths.get(relativeName)).normalize();
+        if (!target.startsWith(deviceUploadDir)) {
+            return;
+        }
+
+        try {
+            Files.deleteIfExists(target);
+        } catch (IOException ignored) {
+            // Ignore file cleanup failures so deleting the device record still succeeds.
+        }
     }
 }

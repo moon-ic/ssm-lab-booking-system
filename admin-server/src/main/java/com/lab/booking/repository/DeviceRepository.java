@@ -74,6 +74,10 @@ public class DeviceRepository extends JdbcRepositorySupport {
         );
     }
 
+    public void deleteById(Long deviceId) {
+        jdbcTemplate.update("DELETE FROM lab_device WHERE device_id = ?", deviceId);
+    }
+
     private DeviceEntity mapDevice(ResultSet rs, int rowNum) throws SQLException {
         DeviceEntity device = new DeviceEntity();
         device.setDeviceId(rs.getLong("device_id"));

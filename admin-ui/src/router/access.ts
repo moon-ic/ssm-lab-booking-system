@@ -18,41 +18,10 @@ export const appRouteChildren: RouteRecordRaw[] = [
     {
         path: "",
         name: "dashboard",
-        component: () => import("@/views/DashboardView.vue"),
+        component: () => import("@/views/StatisticsView.vue"),
         meta: {
             title: "首页",
             menu: true,
-            allowFirstLogin: true
-        } satisfies AppRouteMeta
-    },
-    {
-        path: "users",
-        name: "users",
-        component: () => import("@/views/UserManagementView.vue"),
-        meta: {
-            title: "用户管理",
-            menu: true,
-            roles: ["SUPER_ADMIN", "ADMIN", "TEACHER"]
-        } satisfies AppRouteMeta
-    },
-    {
-        path: "roles",
-        name: "roles",
-        component: () => import("@/views/RolePermissionView.vue"),
-        meta: {
-            title: "角色权限",
-            menu: true,
-            roles: ["SUPER_ADMIN"]
-        } satisfies AppRouteMeta
-    },
-    {
-        path: "profile",
-        name: "profile",
-        component: () => import("@/views/ProfileCenterView.vue"),
-        meta: {
-            title: "个人中心",
-            menu: true,
-            roles: ["SUPER_ADMIN", "ADMIN", "TEACHER", "STUDENT"],
             allowFirstLogin: true
         } satisfies AppRouteMeta
     },
@@ -116,13 +85,34 @@ export const appRouteChildren: RouteRecordRaw[] = [
         } satisfies AppRouteMeta
     },
     {
-        path: "statistics",
-        name: "statistics",
-        component: () => import("@/views/StatisticsView.vue"),
+        path: "profile",
+        name: "profile",
+        component: () => import("@/views/ProfileCenterView.vue"),
         meta: {
-            title: "统计分析",
+            title: "个人中心",
             menu: true,
-            roles: ["SUPER_ADMIN", "ADMIN"]
+            roles: ["SUPER_ADMIN", "ADMIN", "TEACHER", "STUDENT"],
+            allowFirstLogin: true
+        } satisfies AppRouteMeta
+    },
+    {
+        path: "users",
+        name: "users",
+        component: () => import("@/views/UserManagementView.vue"),
+        meta: {
+            title: "用户管理",
+            menu: true,
+            roles: ["SUPER_ADMIN", "ADMIN", "TEACHER"]
+        } satisfies AppRouteMeta
+    },
+    {
+        path: "roles",
+        name: "roles",
+        component: () => import("@/views/RolePermissionView.vue"),
+        meta: {
+            title: "角色权限",
+            menu: true,
+            roles: ["SUPER_ADMIN"]
         } satisfies AppRouteMeta
     },
     {

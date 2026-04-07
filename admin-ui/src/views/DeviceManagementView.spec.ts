@@ -3,20 +3,26 @@ import { reactive } from 'vue'
 import DeviceManagementView from '@/views/DeviceManagementView.vue'
 import { elementPlusStubs } from '@/test/element-stubs'
 
-const { listDevicesMock, createDeviceMock } = vi.hoisted(() => ({
+const { listDevicesMock, createDeviceMock, deleteDeviceMock, confirmMock } = vi.hoisted(() => ({
   listDevicesMock: vi.fn(),
-  createDeviceMock: vi.fn()
+  createDeviceMock: vi.fn(),
+  deleteDeviceMock: vi.fn(),
+  confirmMock: vi.fn()
 }))
 
 vi.mock('element-plus', () => ({
   ElMessage: {
     success: vi.fn(),
     error: vi.fn()
+  },
+  ElMessageBox: {
+    confirm: confirmMock
   }
 }))
 
 vi.mock('@/api/devices', () => ({
   createDevice: createDeviceMock,
+  deleteDevice: deleteDeviceMock,
   deviceStatusOptions: () => ['AVAILABLE', 'BORROWED', 'DISABLED'],
   getDeviceDetail: vi.fn(),
   listDevices: listDevicesMock,
@@ -29,11 +35,11 @@ vi.mock('@/store/auth', () => ({
     state: reactive({
       session: {
         userInfo: {
-          roleCode: 'ADMIN'
+          roleCode: 'SUPER_ADMIN'
         }
       },
       currentUser: {
-        roleCode: 'ADMIN'
+        roleCode: 'SUPER_ADMIN'
       }
     })
   })
@@ -75,6 +81,8 @@ describe('DeviceManagementView', () => {
     createDeviceMock.mockResolvedValue({
       deviceId: 1002
     })
+    deleteDeviceMock.mockResolvedValue(undefined)
+    confirmMock.mockResolvedValue('confirm')
   })
 
   it('loads devices and submits a create request for admin users', async () => {
@@ -106,6 +114,18 @@ describe('DeviceManagementView', () => {
       imageUrl: 'https://example.com/projector.png',
       location: 'Room 305'
     })
+    expect(listDevicesMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('deletes a device for super admins after confirmation', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+
+    await findButton(wrapper, '删除')?.trigger('click')
+    await flushPromises()
+
+    expect(confirmMock).toHaveBeenCalled()
+    expect(deleteDeviceMock).toHaveBeenCalledWith(1001)
     expect(listDevicesMock).toHaveBeenCalledTimes(2)
   })
 })
