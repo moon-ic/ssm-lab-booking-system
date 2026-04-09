@@ -191,6 +191,7 @@ watch(
 
 .layout-main {
     padding: 28px;
+    min-width: 0;
 }
 
 .layout-header {
@@ -323,6 +324,7 @@ watch(
 
 .layout-content {
     min-height: 400px;
+    min-width: 0;
 }
 
 @media (max-width: 980px) {

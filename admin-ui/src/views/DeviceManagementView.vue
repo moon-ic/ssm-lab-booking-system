@@ -209,7 +209,8 @@ onMounted(() => {
         <section class="hero-card">
             <span class="eyebrow">设备模块</span>
             <h2>设备管理与库存概览</h2>
-            <p>所有已登录用户都可以浏览设备库存；管理员和超级管理员可以新增设备、编辑信息并调整生命周期状态。</p>
+            <p>1. 所有已登录用户都可以浏览设备库存</p>
+            <p>2. 管理员和超级管理员可以新增设备、编辑信息并调整生命周期状态</p>
         </section>
 
         <section class="toolbar-card">

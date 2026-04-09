@@ -62,7 +62,7 @@
 Windows 可执行：
 
 ```powershell
-Start-Service MySQL
+net start MySQL
 ```
 
 项目默认连接配置：

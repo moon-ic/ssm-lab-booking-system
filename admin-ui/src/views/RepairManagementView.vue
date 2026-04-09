@@ -187,37 +187,39 @@ onMounted(() => {
     </section>
 
     <section class="table-card">
-      <ElTable :data="page.list" v-loading="loading" width="100%">
-        <ElTableColumn prop="deviceName" label="设备" min-width="180" />
-        <ElTableColumn prop="applicantName" label="申请人" min-width="140" />
-        <ElTableColumn prop="status" label="状态" min-width="140">
-          <template #default="{ row }">
-            <ElTag :type="row.status === 'COMPLETED' ? 'success' : row.status === 'UNREPAIRABLE' ? 'danger' : 'warning'">
-              {{ repairStatusLabel(row.status) }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="createdAt" label="创建时间" min-width="160" />
-        <ElTableColumn prop="updatedAt" label="更新时间" min-width="160" />
-        <ElTableColumn prop="description" label="故障描述" min-width="220" />
-        <ElTableColumn label="操作" min-width="320" fixed="right">
-          <template #default="{ row }">
-            <div class="action-row">
-              <ElButton link type="primary" @click="openDetail(row.repairId)">详情</ElButton>
-              <ElDropdown v-if="canUpdate" @command="(status: RepairStatus) => handleUpdateStatus(row, status)">
-                <ElButton link type="success">更新状态</ElButton>
-                <template #dropdown>
-                  <ElDropdownMenu>
-                    <ElDropdownItem v-for="status in statusOptions" :key="status" :command="status">
-                      {{ repairStatusLabel(status) }}
-                    </ElDropdownItem>
-                  </ElDropdownMenu>
-                </template>
-              </ElDropdown>
-            </div>
-          </template>
-        </ElTableColumn>
-      </ElTable>
+      <div class="table-scroll">
+        <ElTable :data="page.list" v-loading="loading" width="100%">
+          <ElTableColumn prop="deviceName" label="设备" min-width="180" />
+          <ElTableColumn prop="applicantName" label="申请人" min-width="140" />
+          <ElTableColumn prop="status" label="状态" min-width="140">
+            <template #default="{ row }">
+              <ElTag :type="row.status === 'COMPLETED' ? 'success' : row.status === 'UNREPAIRABLE' ? 'danger' : 'warning'">
+                {{ repairStatusLabel(row.status) }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="createdAt" label="创建时间" min-width="160" />
+          <ElTableColumn prop="updatedAt" label="更新时间" min-width="160" />
+          <ElTableColumn prop="description" label="故障描述" min-width="220" />
+          <ElTableColumn label="操作" min-width="320" fixed="right">
+            <template #default="{ row }">
+              <div class="action-row">
+                <ElButton link type="primary" @click="openDetail(row.repairId)">详情</ElButton>
+                <ElDropdown v-if="canUpdate" @command="(status: RepairStatus) => handleUpdateStatus(row, status)">
+                  <ElButton link type="success">更新状态</ElButton>
+                  <template #dropdown>
+                    <ElDropdownMenu>
+                      <ElDropdownItem v-for="status in statusOptions" :key="status" :command="status">
+                        {{ repairStatusLabel(status) }}
+                      </ElDropdownItem>
+                    </ElDropdownMenu>
+                  </template>
+                </ElDropdown>
+              </div>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+      </div>
 
       <div class="pagination-wrap">
         <ElPagination
@@ -267,11 +269,18 @@ onMounted(() => {
 .repair-page {
   display: grid;
   gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 .hero-card,
 .toolbar-card,
 .table-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding: 24px;
   border: 1px solid rgba(148, 163, 184, 0.18);
   border-radius: 24px;
@@ -318,12 +327,24 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .action-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.table-scroll :deep(.el-table) {
+  min-width: 1120px;
 }
 
 .pagination-wrap {
@@ -360,9 +381,18 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
 
+  .hero-card,
+  .toolbar-card,
+  .table-card {
+    padding: 18px;
+  }
+
   .toolbar-actions {
     justify-content: flex-start;
-    flex-wrap: wrap;
+  }
+
+  .pagination-wrap {
+    justify-content: flex-start;
   }
 }
 </style>

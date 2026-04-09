@@ -149,27 +149,6 @@ onMounted(() => {
 
 <template>
     <div class="statistics-page" v-loading="loading">
-        <section class="toolbar-card">
-            <div class="filter-grid">
-                <ElSelect v-model="query.rankScope" placeholder="统计范围">
-                    <ElOption
-                        v-for="option in scopeOptions"
-                        :key="option.value"
-                        :label="option.label"
-                        :value="option.value"
-                    />
-                </ElSelect>
-                <ElSelect v-model="query.topN" placeholder="排行数量">
-                    <ElOption v-for="count in topNOptions" :key="count" :label="`前 ${count} 名`" :value="count" />
-                </ElSelect>
-            </div>
-
-            <div class="toolbar-actions">
-                <ElButton @click="handleReset">重置</ElButton>
-                <ElButton type="primary" @click="handleSearch">刷新</ElButton>
-            </div>
-        </section>
-
         <section class="summary-grid">
             <article v-for="card in summaryCards" :key="card.title" class="summary-card">
                 <span>{{ card.title }}</span>
