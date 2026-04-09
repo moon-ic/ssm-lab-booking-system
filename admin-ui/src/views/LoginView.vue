@@ -58,8 +58,8 @@ function fillDemo(loginId: string, password: string) {
                 场景，便于前后端并行开发。
             </p>
             <div class="demo-panel">
-                <button type="button" @click="fillDemo('SA001', '0000')">超级管理员：SA001 / 00000000</button>
-                <button type="button" @click="fillDemo('A001', '0000')">管理员：A001 / 00000000</button>
+                <button type="button" @click="fillDemo('SA001', '0000')">超级管理员：SA001 / 0000</button>
+                <button type="button" @click="fillDemo('A001', '0000')">管理员：A001 / 0000</button>
                 <button type="button" @click="fillDemo('T2026001', '00000000')">教师：T2026001 / 00000000</button>
                 <button type="button" @click="fillDemo('20230001', '00000000')">学生：20230001 / 00000000</button>
             </div>
