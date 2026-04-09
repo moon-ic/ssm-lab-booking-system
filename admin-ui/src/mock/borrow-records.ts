@@ -67,6 +67,9 @@ function visibleTo(token: string, item: BorrowRecordItem) {
     return true
   }
   if (user.roleCode === 'TEACHER') {
+    if (item.userId === user.userId) {
+      return true
+    }
     const applicant = readMockUsers().find((candidate) => candidate.userId === item.userId)
     return applicant?.roleCode === 'STUDENT' && applicant.managerId === user.userId
   }
@@ -141,8 +144,8 @@ export async function mockListBorrowRecords(token: string, query: BorrowRecordLi
 export async function mockPickupBorrowRecord(token: string, recordId: number, _payload: PickupPayload) {
   await wait(180)
   const user = currentUser(token)
-  if (user.roleCode !== 'STUDENT') {
-    throw new Error('Only students can confirm pickup')
+  if (!['STUDENT', 'TEACHER'].includes(user.roleCode)) {
+    throw new Error('Only students and teachers can confirm pickup')
   }
 
   const items = readBorrowRecords()
@@ -166,8 +169,8 @@ export async function mockPickupBorrowRecord(token: string, recordId: number, _p
 export async function mockReturnBorrowRecord(token: string, recordId: number, payload: ReturnPayload) {
   await wait(180)
   const user = currentUser(token)
-  if (user.roleCode !== 'STUDENT') {
-    throw new Error('Only students can return devices')
+  if (!['STUDENT', 'TEACHER'].includes(user.roleCode)) {
+    throw new Error('Only students and teachers can return devices')
   }
 
   const items = readBorrowRecords()

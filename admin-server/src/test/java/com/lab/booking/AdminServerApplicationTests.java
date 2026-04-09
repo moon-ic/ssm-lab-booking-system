@@ -962,6 +962,82 @@ class AdminServerApplicationTests {
     }
 
     @Test
+    void teacherCanReserveWithAdminOnlyApprovalAndCompleteBorrowFlow() throws Exception {
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        String adminToken = loginAndGetToken("A001", "0000");
+
+        String reservationResponse = mockMvc.perform(post("/api/reservations")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "deviceId": 1001,
+                                  "startTime": "2026-04-07 09:00:00",
+                                  "endTime": "2026-04-07 18:00:00",
+                                  "purpose": "teacher borrow"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.status").value("APPROVED"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String reservationId = extractField(reservationResponse, "\"reservationId\":(\\d+)");
+
+        mockMvc.perform(get("/api/reservations/" + reservationId)
+                        .header("Authorization", "Bearer " + teacherToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.applicantId").value(3))
+                .andExpect(jsonPath("$.data.status").value("APPROVED"));
+
+        mockMvc.perform(put("/api/reservations/" + reservationId + "/approve")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "action": "APPROVE",
+                                  "comment": "admin approved teacher reservation"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.status").value("PICKUP_PENDING"));
+
+        String borrowList = mockMvc.perform(get("/api/borrow-records")
+                        .header("Authorization", "Bearer " + teacherToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String recordId = extractField(borrowList, "\"recordId\":(\\d+)");
+
+        mockMvc.perform(put("/api/borrow-records/" + recordId + "/pickup")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("BORROWING"));
+
+        mockMvc.perform(put("/api/borrow-records/" + recordId + "/return")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "returnTime": "2026-04-07 17:30:00",
+                                  "deviceCondition": "NORMAL"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.status").value("RETURNED"))
+                .andExpect(jsonPath("$.data.deviceCondition").value("NORMAL"));
+    }
+
+    @Test
     void adminCanMarkBorrowRecordOverdueAndQueryReminderList() throws Exception {
         String studentToken = loginAndGetToken("20230001", "0000");
         String teacherToken = loginAndGetToken("T2026001", "0000");
@@ -1644,6 +1720,36 @@ class AdminServerApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data[0].rankScope").value("MONTH"));
+    }
+
+    @Test
+    void teacherAndStudentCanAccessHomepageStatistics() throws Exception {
+        String studentToken = loginAndGetToken("20230001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+
+        mockMvc.perform(get("/api/statistics/overview")
+                        .header("Authorization", "Bearer " + teacherToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.deviceTotal").exists());
+
+        mockMvc.perform(get("/api/statistics/devices/hot")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .param("rankScope", "MONTH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        mockMvc.perform(get("/api/statistics/devices/damage")
+                        .header("Authorization", "Bearer " + teacherToken)
+                        .param("rankScope", "MONTH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        mockMvc.perform(get("/api/statistics/users/violations")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .param("rankScope", "MONTH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
     }
 
     private String loginAndGetToken(String loginId, String password) throws Exception {

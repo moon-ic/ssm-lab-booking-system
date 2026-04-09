@@ -93,7 +93,7 @@ public class BorrowRecordService {
     }
 
     public Map<String, Object> pickup(Long recordId, BorrowRecordDtos.PickupRequest request) {
-        UserEntity currentUser = requireRoles(RoleCode.STUDENT);
+        UserEntity currentUser = requireRoles(RoleCode.STUDENT, RoleCode.TEACHER);
         BorrowRecordEntity record = getExistingRecord(recordId);
         if (!Objects.equals(record.getUserId(), currentUser.getUserId())) {
             throw new ApiException(403, "仅本人可确认领取");
@@ -119,7 +119,7 @@ public class BorrowRecordService {
     }
 
     public Map<String, Object> returnDevice(Long recordId, BorrowRecordDtos.ReturnRequest request) {
-        UserEntity currentUser = requireRoles(RoleCode.STUDENT);
+        UserEntity currentUser = requireRoles(RoleCode.STUDENT, RoleCode.TEACHER);
         BorrowRecordEntity record = getExistingRecord(recordId);
         if (!Objects.equals(record.getUserId(), currentUser.getUserId())) {
             throw new ApiException(403, "仅本人可归还设备");
@@ -211,6 +211,9 @@ public class BorrowRecordService {
         return switch (currentUser.getRoleCode()) {
             case SUPER_ADMIN, ADMIN -> true;
             case TEACHER -> {
+                if (Objects.equals(record.getUserId(), currentUser.getUserId())) {
+                    yield true;
+                }
                 UserEntity applicant = getExistingUser(record.getUserId());
                 yield applicant.getRoleCode() == RoleCode.STUDENT
                         && Objects.equals(applicant.getManagerId(), currentUser.getUserId());

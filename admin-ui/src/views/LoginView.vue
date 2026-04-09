@@ -58,10 +58,10 @@ function fillDemo(loginId: string, password: string) {
         场景，便于前后端并行开发。
       </p>
       <div class="demo-panel">
-        <button type="button" @click="fillDemo('SA001', '0000')">超级管理员：SA001 / 0000</button>
-        <button type="button" @click="fillDemo('A001', '0000')">管理员：A001 / 0000</button>
-        <button type="button" @click="fillDemo('T2026001', '0000')">教师：T2026001 / 0000</button>
-        <button type="button" @click="fillDemo('20230001', '0000')">学生：20230001 / 0000</button>
+        <button type="button" @click="fillDemo('SA001', '00000000')">超级管理员：SA001 / 00000000</button>
+        <button type="button" @click="fillDemo('A001', '00000000')">管理员：A001 / 00000000</button>
+        <button type="button" @click="fillDemo('T2026001', '00000000')">教师：T2026001 / 00000000</button>
+        <button type="button" @click="fillDemo('20230001', '00000000')">学生：20230001 / 00000000</button>
       </div>
     </section>
 
@@ -92,8 +92,8 @@ function fillDemo(loginId: string, password: string) {
       </ElForm>
 
       <ul class="login-tips">
-        <li>默认 mock 已覆盖成功登录、密码错误、禁用账号和首次登录改密场景。</li>
-        <li>将 `VITE_ENABLE_MOCK=false` 后可直接切换到真实后端接口。</li>
+        <li>当前联调用演示账号密码为 `00000000`。</li>
+        <li>如果更新了环境配置或后端权限规则，记得重启 Vite 前端服务。</li>
       </ul>
     </section>
   </div>

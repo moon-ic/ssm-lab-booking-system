@@ -51,7 +51,7 @@ const dateTimeValueFormat = "YYYY-MM-DD HH:mm";
 const currentRole = computed(
     () => authStore.state.currentUser?.roleCode ?? authStore.state.session?.userInfo.roleCode ?? "STUDENT"
 );
-const canCreate = computed(() => currentRole.value === "STUDENT");
+const canCreate = computed(() => ["STUDENT", "TEACHER"].includes(currentRole.value));
 const isTeacher = computed(() => currentRole.value === "TEACHER");
 const isAdmin = computed(() => currentRole.value === "SUPER_ADMIN" || currentRole.value === "ADMIN");
 const statusOptions: ReservationStatus[] = [
@@ -141,7 +141,8 @@ function canReject(row: ReservationItem) {
 }
 
 function canCancel(row: ReservationItem) {
-    return currentRole.value === "STUDENT" && (row.status === "PENDING" || row.status === "APPROVED");
+    const currentUserId = authStore.state.currentUser?.userId ?? authStore.state.session?.userInfo.userId;
+    return row.applicantId === currentUserId && (row.status === "PENDING" || row.status === "APPROVED");
 }
 
 function approveButtonText(row: ReservationItem) {
@@ -286,8 +287,8 @@ onMounted(() => {
     <div class="reservation-page">
         <section class="hero-card">
             <span class="eyebrow">预约模块</span>
-            <h2>预约申请与两级审核流程</h2>
-            <p>学生提交后需要先教师审核，教师通过后再进入管理员终审，只有两级都通过才可以领取。</p>
+            <h2>设备借用预约与审核流程</h2>
+            <p>学生提交后需要先教师审核再进入管理员终审，教师本人发起的借用申请会直接进入管理员审核，通过后即可领取。</p>
         </section>
 
         <section class="toolbar-card">
@@ -305,7 +306,7 @@ onMounted(() => {
             <div class="toolbar-actions">
                 <ElButton @click="handleReset">重置</ElButton>
                 <ElButton type="primary" @click="handleSearch">查询</ElButton>
-                <ElButton v-if="canCreate" type="success" @click="createDialogVisible = true">发起预约</ElButton>
+                <ElButton v-if="canCreate" type="success" @click="createDialogVisible = true">发起借用</ElButton>
             </div>
         </section>
 
@@ -370,7 +371,7 @@ onMounted(() => {
             </div>
         </section>
 
-        <ElDialog v-model="createDialogVisible" title="发起预约" width="520px" @closed="resetCreateForm">
+        <ElDialog v-model="createDialogVisible" title="发起借用" width="520px" @closed="resetCreateForm">
             <ElForm ref="createFormRef" :model="createForm" :rules="createRules" label-position="top">
                 <ElFormItem label="设备" prop="deviceId">
                     <ElSelect v-model="createForm.deviceId" placeholder="请选择可预约设备">
@@ -406,7 +407,7 @@ onMounted(() => {
                     />
                 </ElFormItem>
                 <ElFormItem label="用途说明" prop="purpose">
-                    <ElInput v-model="createForm.purpose" type="textarea" :rows="3" placeholder="请填写预约用途" />
+                    <ElInput v-model="createForm.purpose" type="textarea" :rows="3" placeholder="请填写借用用途" />
                 </ElFormItem>
             </ElForm>
             <template #footer>

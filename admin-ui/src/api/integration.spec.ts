@@ -95,6 +95,33 @@ describe('api integration with mock backend', () => {
     })
     expect(imported.status).toBe('AVAILABLE')
 
+    const teacherSession = await login({ loginId: 'T2026888', password: '0000' })
+    localStorage.setItem('admin-auth-session', JSON.stringify(teacherSession))
+    const teacherReservation = await createReservation({
+      deviceId: device.deviceId,
+      startTime: '2026-04-09 09:00:00',
+      endTime: '2026-04-09 18:00:00',
+      purpose: 'teacher borrowing'
+    })
+    expect(teacherReservation.status).toBe('APPROVED')
+
+    localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'admin_flow', password: '0000' })))
+    const teacherApprovedReservation = await approveReservation(teacherReservation.reservationId, {
+      action: 'APPROVE',
+      comment: 'admin approved teacher reservation'
+    })
+    expect(teacherApprovedReservation.status).toBe('PICKUP_PENDING')
+
+    localStorage.setItem('admin-auth-session', JSON.stringify(teacherSession))
+    const teacherBorrowList = await listBorrowRecords({ pageNum: 1, pageSize: 20 })
+    const teacherRecord = teacherBorrowList.list.find((item) => item.reservationId === teacherReservation.reservationId)
+    expect(teacherRecord).toBeTruthy()
+    if (!teacherRecord) {
+      throw new Error('Expected teacher borrow record to exist')
+    }
+    await pickupBorrowRecord(teacherRecord.recordId, {})
+    await returnBorrowRecord(teacherRecord.recordId, { returnTime: '2026-04-09 17:30', deviceCondition: 'GOOD' })
+
     localStorage.setItem('admin-auth-session', JSON.stringify(await login({ loginId: 'T2026888', password: '0000' })))
     const student = await createStudent({ name: 'Student Flow', studentNo: '20245555', phone: '13800001444' })
     expect(student.roleCode).toBe('STUDENT')

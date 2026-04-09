@@ -60,7 +60,7 @@ public class StatisticsService {
     }
 
     public List<Map<String, Object>> hotDevices(String startDate, String endDate, RankScope rankScope, Integer topN) {
-        requireAdmin();
+        requireStatisticsAccess();
         DateRange range = resolveRange(startDate, endDate, rankScope);
         int actualTopN = normalizeTopN(topN);
 
@@ -87,7 +87,7 @@ public class StatisticsService {
     }
 
     public List<Map<String, Object>> deviceDamageStatistics(RankScope rankScope, Integer topN) {
-        requireAdmin();
+        requireStatisticsAccess();
         DateRange range = resolveRange(null, null, rankScope);
         int actualTopN = normalizeTopN(topN);
 
@@ -101,7 +101,7 @@ public class StatisticsService {
     }
 
     public List<Map<String, Object>> userViolationStatistics(RankScope rankScope, Integer topN) {
-        requireAdmin();
+        requireStatisticsAccess();
         DateRange range = resolveRange(null, null, rankScope);
         int actualTopN = normalizeTopN(topN);
 
@@ -117,7 +117,7 @@ public class StatisticsService {
     }
 
     public Map<String, Object> overview() {
-        requireAdmin();
+        requireStatisticsAccess();
         return cacheService.get(OVERVIEW_CACHE_KEY, LinkedHashMap.class)
                 .map(map -> (Map<String, Object>) map)
                 .orElseGet(this::computeAndCacheOverview);
@@ -251,9 +251,12 @@ public class StatisticsService {
         }
     }
 
-    private void requireAdmin() {
+    private void requireStatisticsAccess() {
         UserEntity currentUser = authService.currentUser();
-        if (currentUser.getRoleCode() != RoleCode.ADMIN && currentUser.getRoleCode() != RoleCode.SUPER_ADMIN) {
+        if (currentUser.getRoleCode() != RoleCode.ADMIN
+                && currentUser.getRoleCode() != RoleCode.SUPER_ADMIN
+                && currentUser.getRoleCode() != RoleCode.TEACHER
+                && currentUser.getRoleCode() != RoleCode.STUDENT) {
             throw new ApiException(403, "权限不够");
         }
     }

@@ -75,6 +75,9 @@ function visibleTo(token: string, item: ReservationItem) {
     return true
   }
   if (user.roleCode === 'TEACHER') {
+    if (item.applicantId === user.userId) {
+      return true
+    }
     const applicant = readMockUsers().find((candidate) => candidate.userId === item.applicantId)
     return applicant?.roleCode === 'STUDENT' && applicant.managerId === user.userId
   }
@@ -122,12 +125,13 @@ export async function mockGetReservationDetail(token: string, reservationId: num
 export async function mockCreateReservation(token: string, payload: CreateReservationPayload) {
   await wait()
   const user = currentUser(token)
-  if (user.roleCode !== 'STUDENT') {
-    throw new Error('Only students can create reservations')
+  if (!['STUDENT', 'TEACHER'].includes(user.roleCode)) {
+    throw new Error('Only students and teachers can create reservations')
   }
 
   const device = await mockGetDeviceDetail(payload.deviceId)
   const items = readReservations()
+  const initialStatus = user.roleCode === 'TEACHER' ? 'APPROVED' : 'PENDING'
   const item: ReservationItem = {
     reservationId: nextReservationId(items),
     deviceId: payload.deviceId,
@@ -137,7 +141,7 @@ export async function mockCreateReservation(token: string, payload: CreateReserv
     startTime: payload.startTime,
     endTime: payload.endTime,
     purpose: payload.purpose,
-    status: 'PENDING',
+    status: initialStatus,
     createdAt: '2026-03-31 18:30'
   }
   items.push(item)

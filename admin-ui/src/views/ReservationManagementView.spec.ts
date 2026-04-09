@@ -8,6 +8,19 @@ const { listReservationsMock, listDevicesMock } = vi.hoisted(() => ({
   listDevicesMock: vi.fn()
 }))
 
+const authState = reactive({
+  session: {
+    userInfo: {
+      roleCode: 'STUDENT',
+      userId: 4
+    }
+  },
+  currentUser: {
+    roleCode: 'STUDENT',
+    userId: 4
+  }
+})
+
 vi.mock('element-plus', () => ({
   ElMessage: {
     success: vi.fn(),
@@ -33,29 +46,25 @@ vi.mock('@/api/devices', () => ({
 
 vi.mock('@/store/auth', () => ({
   useAuthStore: () => ({
-    state: reactive({
-      session: {
-        userInfo: {
-          roleCode: 'STUDENT'
-        }
-      },
-      currentUser: {
-        roleCode: 'STUDENT'
-      }
-    })
+    state: authState
   })
 }))
 
 describe('ReservationManagementView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    authState.session.userInfo.roleCode = 'STUDENT'
+    authState.session.userInfo.userId = 4
+    authState.currentUser.roleCode = 'STUDENT'
+    authState.currentUser.userId = 4
   })
 
-  it('loads reservations and exposes create reservation for students', async () => {
+  it('loads reservations and exposes create action for students', async () => {
     listReservationsMock.mockResolvedValue({
       list: [
         {
           reservationId: 7001,
+          applicantId: 4,
           deviceName: 'Flow Camera',
           applicantName: 'Student Wang',
           startTime: '2026-04-10 09:00',
@@ -87,9 +96,36 @@ describe('ReservationManagementView', () => {
     })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('发起预约')
+    expect(wrapper.text()).toContain('发起借用')
     expect(listReservationsMock).toHaveBeenCalled()
     expect(listDevicesMock).toHaveBeenCalled()
     expect(wrapper.find('.el-table-stub').text()).toContain('Flow Camera')
+  })
+
+  it('also exposes create action for teachers', async () => {
+    authState.session.userInfo.roleCode = 'TEACHER'
+    authState.session.userInfo.userId = 3
+    authState.currentUser.roleCode = 'TEACHER'
+    authState.currentUser.userId = 3
+
+    listReservationsMock.mockResolvedValue({
+      list: [],
+      total: 0
+    })
+    listDevicesMock.mockResolvedValue({
+      list: []
+    })
+
+    const wrapper = mount(ReservationManagementView, {
+      global: {
+        stubs: elementPlusStubs,
+        directives: {
+          loading: {}
+        }
+      }
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('发起借用')
   })
 })

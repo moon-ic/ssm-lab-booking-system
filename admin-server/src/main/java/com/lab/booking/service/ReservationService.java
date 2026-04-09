@@ -52,7 +52,7 @@ public class ReservationService {
     }
 
     public Map<String, Object> createReservation(ReservationDtos.CreateReservationRequest request) {
-        UserEntity applicant = requireRoles(RoleCode.STUDENT);
+        UserEntity applicant = requireRoles(RoleCode.STUDENT, RoleCode.TEACHER);
         DeviceEntity device = getExistingDevice(request.deviceId());
         LocalDateTime startTime = parseDateTime(request.startTime(), "startTime");
         LocalDateTime endTime = parseDateTime(request.endTime(), "endTime");
@@ -69,7 +69,7 @@ public class ReservationService {
         reservation.setStartTime(startTime);
         reservation.setEndTime(endTime);
         reservation.setPurpose(request.purpose().trim());
-        reservation.setStatus(ReservationStatus.PENDING);
+        reservation.setStatus(applicant.getRoleCode() == RoleCode.TEACHER ? ReservationStatus.APPROVED : ReservationStatus.PENDING);
         reservation.setCreatedAt(LocalDateTime.now());
         reservationRepository.save(reservation);
         return toReservationDetail(reservation);
@@ -136,7 +136,7 @@ public class ReservationService {
     }
 
     public void cancelReservation(Long reservationId) {
-        UserEntity currentUser = requireRoles(RoleCode.STUDENT);
+        UserEntity currentUser = requireRoles(RoleCode.STUDENT, RoleCode.TEACHER);
         ReservationEntity reservation = getExistingReservation(reservationId);
         if (!Objects.equals(reservation.getApplicantId(), currentUser.getUserId())) {
             throw new ApiException(403, "仅本人可取消预约");
@@ -297,6 +297,9 @@ public class ReservationService {
         return switch (currentUser.getRoleCode()) {
             case SUPER_ADMIN, ADMIN -> true;
             case TEACHER -> {
+                if (Objects.equals(reservation.getApplicantId(), currentUser.getUserId())) {
+                    yield true;
+                }
                 UserEntity applicant = getExistingUser(reservation.getApplicantId());
                 yield applicant.getRoleCode() == RoleCode.STUDENT
                         && Objects.equals(applicant.getManagerId(), currentUser.getUserId());
