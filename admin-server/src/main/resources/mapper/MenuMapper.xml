@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.booking.mapper.MenuMapper">
+
+    <resultMap id="MenuResultMap" type="com.lab.booking.model.MenuEntity">
+        <id     property="menuId"         column="menu_id"/>
+        <result property="menuName"       column="menu_name"/>
+        <result property="path"           column="path"/>
+        <result property="icon"           column="icon"/>
+        <result property="permissionCode" column="permission_code"/>
+    </resultMap>
+
+    <select id="selectAllMenus" resultMap="MenuResultMap">
+        SELECT * FROM sys_menu ORDER BY menu_id
+    </select>
+
+    <select id="selectMenuById" resultMap="MenuResultMap">
+        SELECT * FROM sys_menu WHERE menu_id = #{menuId} LIMIT 1
+    </select>
+
+    <insert id="upsertMenu">
+        INSERT INTO sys_menu (menu_id, menu_name, path, icon, permission_code)
+        VALUES (#{menuId}, #{menuName}, #{path}, #{icon}, #{permissionCode})
+        ON DUPLICATE KEY UPDATE
+            menu_name       = VALUES(menu_name),
+            path            = VALUES(path),
+            icon            = VALUES(icon),
+            permission_code = VALUES(permission_code)
+    </insert>
+
+    <select id="selectAllIcons" resultType="java.lang.String">
+        SELECT icon_name FROM sys_icon ORDER BY sort_order, icon_name
+    </select>
+
+</mapper>

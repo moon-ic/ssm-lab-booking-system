@@ -2,6 +2,9 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.dto.ReservationDtos;
+import com.lab.booking.mapper.BorrowRecordMapper;
+import com.lab.booking.mapper.DeviceMapper;
+import com.lab.booking.mapper.ReservationMapper;
 import com.lab.booking.model.BorrowRecordEntity;
 import com.lab.booking.model.BorrowStatus;
 import com.lab.booking.model.DeviceEntity;
@@ -11,9 +14,6 @@ import com.lab.booking.model.ReservationStatus;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.UserEntity;
 import com.lab.booking.repository.AuthRepository;
-import com.lab.booking.repository.BorrowRecordRepository;
-import com.lab.booking.repository.DeviceRepository;
-import com.lab.booking.repository.ReservationRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,23 +31,23 @@ public class ReservationService {
     private static final DateTimeFormatter SECOND_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter MINUTE_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    private final ReservationRepository reservationRepository;
-    private final DeviceRepository deviceRepository;
+    private final ReservationMapper reservationMapper;
+    private final DeviceMapper deviceMapper;
     private final AuthRepository authRepository;
-    private final BorrowRecordRepository borrowRecordRepository;
+    private final BorrowRecordMapper borrowRecordMapper;
     private final AuthService authService;
 
     public ReservationService(
-            ReservationRepository reservationRepository,
-            DeviceRepository deviceRepository,
+            ReservationMapper reservationMapper,
+            DeviceMapper deviceMapper,
             AuthRepository authRepository,
-            BorrowRecordRepository borrowRecordRepository,
+            BorrowRecordMapper borrowRecordMapper,
             AuthService authService
     ) {
-        this.reservationRepository = reservationRepository;
-        this.deviceRepository = deviceRepository;
+        this.reservationMapper = reservationMapper;
+        this.deviceMapper = deviceMapper;
         this.authRepository = authRepository;
-        this.borrowRecordRepository = borrowRecordRepository;
+        this.borrowRecordMapper = borrowRecordMapper;
         this.authService = authService;
     }
 
@@ -63,7 +63,8 @@ public class ReservationService {
         ensureNoTimeConflict(request.deviceId(), startTime, endTime, null);
 
         ReservationEntity reservation = new ReservationEntity();
-        reservation.setReservationId(reservationRepository.nextReservationId());
+        Long nextId = reservationMapper.selectNextReservationId();
+        reservation.setReservationId(nextId == null ? 2001L : nextId);
         reservation.setApplicantId(applicant.getUserId());
         reservation.setDeviceId(request.deviceId());
         reservation.setStartTime(startTime);
@@ -71,7 +72,7 @@ public class ReservationService {
         reservation.setPurpose(request.purpose().trim());
         reservation.setStatus(applicant.getRoleCode() == RoleCode.TEACHER ? ReservationStatus.APPROVED : ReservationStatus.PENDING);
         reservation.setCreatedAt(LocalDateTime.now());
-        reservationRepository.save(reservation);
+        reservationMapper.upsertReservation(reservation);
         return toReservationDetail(reservation);
     }
 
@@ -83,7 +84,7 @@ public class ReservationService {
             Integer pageSize
     ) {
         UserEntity currentUser = requireRoles(RoleCode.SUPER_ADMIN, RoleCode.ADMIN, RoleCode.TEACHER, RoleCode.STUDENT);
-        List<Map<String, Object>> filtered = reservationRepository.findAll().stream()
+        List<Map<String, Object>> filtered = reservationMapper.selectAll().stream()
                 .filter(reservation -> visibleTo(currentUser, reservation))
                 .filter(reservation -> status == null || reservation.getStatus() == status)
                 .filter(reservation -> deviceId == null || Objects.equals(reservation.getDeviceId(), deviceId))
@@ -131,7 +132,7 @@ public class ReservationService {
             default -> throw new ApiException(400, "审核动作仅支持 APPROVE 或 REJECT");
         }
 
-        reservationRepository.save(reservation);
+        reservationMapper.upsertReservation(reservation);
         return toReservationDetail(reservation);
     }
 
@@ -145,7 +146,7 @@ public class ReservationService {
             throw new ApiException(409, "当前预约状态不可取消");
         }
         reservation.setStatus(ReservationStatus.CANCELLED);
-        reservationRepository.save(reservation);
+        reservationMapper.upsertReservation(reservation);
     }
 
     public void expireReservation(Long reservationId) {
@@ -155,17 +156,19 @@ public class ReservationService {
             throw new ApiException(409, "当前预约状态不可失效");
         }
         DeviceEntity device = getExistingDevice(reservation.getDeviceId());
-        BorrowRecordEntity record = borrowRecordRepository.findByReservationId(reservationId)
-                .orElseThrow(() -> new ApiException(404, "借用记录不存在"));
+        BorrowRecordEntity record = borrowRecordMapper.selectByReservationId(reservationId);
+        if (record == null) {
+            throw new ApiException(404, "借用记录不存在");
+        }
         if (record.getStatus() != BorrowStatus.PICKUP_PENDING || device.getStatus() != DeviceStatus.RESERVED) {
             throw new ApiException(409, "当前预约状态不可失效");
         }
         reservation.setStatus(ReservationStatus.EXPIRED);
         record.setStatus(BorrowStatus.OVERDUE);
-        borrowRecordRepository.save(record);
+        borrowRecordMapper.upsertBorrowRecord(record);
         device.setStatus(DeviceStatus.AVAILABLE);
-        deviceRepository.save(device);
-        reservationRepository.save(reservation);
+        deviceMapper.upsertDevice(device);
+        reservationMapper.upsertReservation(reservation);
     }
 
     private void approveReservationInternal(ReservationEntity reservation, UserEntity reviewer, String comment) {
@@ -190,7 +193,7 @@ public class ReservationService {
         reservation.setReviewerId(reviewer.getUserId());
         reservation.setReviewComment(blankToNull(comment));
         device.setStatus(DeviceStatus.RESERVED);
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
         createBorrowRecord(reservation);
     }
 
@@ -225,7 +228,7 @@ public class ReservationService {
             throw new ApiException(409, "当前设备状态不可审核通过");
         }
         if (device.getStatus() == DeviceStatus.RESERVED) {
-            boolean reservedByOtherReservation = reservationRepository.findAll().stream()
+            boolean reservedByOtherReservation = reservationMapper.selectAll().stream()
                     .filter(item -> !Objects.equals(item.getReservationId(), reservation.getReservationId()))
                     .anyMatch(item -> Objects.equals(item.getDeviceId(), device.getDeviceId())
                             && item.getStatus() == ReservationStatus.PICKUP_PENDING);
@@ -236,23 +239,24 @@ public class ReservationService {
     }
 
     private void createBorrowRecord(ReservationEntity reservation) {
-        boolean exists = borrowRecordRepository.findByReservationId(reservation.getReservationId()).isPresent();
-        if (exists) {
+        BorrowRecordEntity existing = borrowRecordMapper.selectByReservationId(reservation.getReservationId());
+        if (existing != null) {
             return;
         }
 
         BorrowRecordEntity record = new BorrowRecordEntity();
-        record.setRecordId(borrowRecordRepository.nextRecordId());
+        Long nextId = borrowRecordMapper.selectNextRecordId();
+        record.setRecordId(nextId == null ? 3001L : nextId);
         record.setReservationId(reservation.getReservationId());
         record.setUserId(reservation.getApplicantId());
         record.setDeviceId(reservation.getDeviceId());
         record.setStatus(BorrowStatus.PICKUP_PENDING);
         record.setExpectedReturnTime(reservation.getEndTime());
-        borrowRecordRepository.save(record);
+        borrowRecordMapper.upsertBorrowRecord(record);
     }
 
     private void ensureNoTimeConflict(Long deviceId, LocalDateTime startTime, LocalDateTime endTime, Long excludeReservationId) {
-        boolean conflict = reservationRepository.findAll().stream()
+        boolean conflict = reservationMapper.selectAll().stream()
                 .filter(item -> !Objects.equals(item.getReservationId(), excludeReservationId))
                 .filter(item -> Objects.equals(item.getDeviceId(), deviceId))
                 .filter(item -> item.getStatus() != ReservationStatus.REJECTED
@@ -265,17 +269,23 @@ public class ReservationService {
     }
 
     private ReservationEntity getExistingReservation(Long reservationId) {
-        return reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ApiException(404, "预约不存在"));
+        ReservationEntity reservation = reservationMapper.selectById(reservationId);
+        if (reservation == null) {
+            throw new ApiException(404, "预约不存在");
+        }
+        return reservation;
     }
 
     private DeviceEntity getExistingDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId)
-                .orElseThrow(() -> new ApiException(404, "设备不存在"));
+        DeviceEntity device = deviceMapper.selectById(deviceId);
+        if (device == null) {
+            throw new ApiException(404, "设备不存在");
+        }
+        return device;
     }
 
     private DeviceEntity findDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId).orElse(null);
+        return deviceMapper.selectById(deviceId);
     }
 
     private UserEntity getExistingUser(Long userId) {

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.booking.mapper.UserMapper">
+
+    <resultMap id="UserResultMap" type="com.lab.booking.model.UserEntity">
+        <id     property="userId"             column="user_id"/>
+        <result property="name"               column="name"/>
+        <result property="account"            column="account"/>
+        <result property="loginId"            column="login_id"/>
+        <result property="phone"              column="phone"/>
+        <result property="roleCode"           column="role_code"
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="status"             column="status"
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="creditScore"        column="credit_score"/>
+        <result property="password"           column="password"/>
+        <result property="firstLoginRequired" column="first_login_required"/>
+        <result property="managerId"          column="manager_id"/>
+        <result property="deleted"            column="deleted"/>
+    </resultMap>
+
+    <select id="selectByLoginId" resultMap="UserResultMap">
+        SELECT * FROM sys_user
+        WHERE deleted = 0
+          AND (login_id = #{loginId} OR account = #{loginId})
+        LIMIT 1
+    </select>
+
+    <select id="selectById" resultMap="UserResultMap">
+        SELECT * FROM sys_user
+        WHERE user_id = #{userId} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <select id="selectNextUserId" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(user_id), 10) + 1 FROM sys_user
+    </select>
+
+    <select id="selectAll" resultMap="UserResultMap">
+        SELECT * FROM sys_user ORDER BY user_id
+    </select>
+
+    <insert id="upsertUser">
+        INSERT INTO sys_user (
+            user_id, name, account, login_id, phone, role_code, status,
+            credit_score, password, first_login_required, manager_id, deleted
+        ) VALUES (
+            #{userId}, #{name}, #{account}, #{loginId}, #{phone},
+            #{roleCode, typeHandler=org.apache.ibatis.type.EnumTypeHandler},
+            #{status,   typeHandler=org.apache.ibatis.type.EnumTypeHandler},
+            #{creditScore}, #{password}, #{firstLoginRequired}, #{managerId}, #{deleted}
+        )
+        ON DUPLICATE KEY UPDATE
+            name               = VALUES(name),
+            account            = VALUES(account),
+            login_id           = VALUES(login_id),
+            phone              = VALUES(phone),
+            role_code          = VALUES(role_code),
+            status             = VALUES(status),
+            credit_score       = VALUES(credit_score),
+            password           = VALUES(password),
+            first_login_required = VALUES(first_login_required),
+            manager_id         = VALUES(manager_id),
+            deleted            = VALUES(deleted)
+    </insert>
+
+</mapper>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.booking.mapper.RoleMapper">
+
+    <resultMap id="RoleResultMap" type="com.lab.booking.model.RoleEntity">
+        <id     property="roleId"   column="role_id"/>
+        <result property="roleName" column="role_name"/>
+        <result property="roleCode" column="role_code"/>
+        <result property="remark"   column="remark"/>
+    </resultMap>
+
+    <resultMap id="PermissionResultMap" type="com.lab.booking.model.PermissionEntity">
+        <constructor>
+            <idArg column="permission_id"   javaType="Long"   name="permissionId"/>
+            <arg   column="permission_code" javaType="String" name="permissionCode"/>
+            <arg   column="permission_name" javaType="String" name="permissionName"/>
+            <arg   column="type"            javaType="String" name="type"/>
+        </constructor>
+    </resultMap>
+
+    <select id="selectAllRoles" resultMap="RoleResultMap">
+        SELECT * FROM sys_role ORDER BY role_id
+    </select>
+
+    <select id="selectRoleById" resultMap="RoleResultMap">
+        SELECT * FROM sys_role WHERE role_id = #{roleId} LIMIT 1
+    </select>
+
+    <select id="selectPermissionIdsByRoleId" resultType="java.lang.Long">
+        SELECT permission_id FROM sys_role_permission
+        WHERE role_id = #{roleId}
+        ORDER BY permission_id
+    </select>
+
+    <select id="selectMenuIdsByRoleId" resultType="java.lang.Long">
+        SELECT menu_id FROM sys_role_menu
+        WHERE role_id = #{roleId}
+        ORDER BY menu_id
+    </select>
+
+    <insert id="upsertRole">
+        INSERT INTO sys_role (role_id, role_name, role_code, remark)
+        VALUES (#{roleId}, #{roleName}, #{roleCode}, #{remark})
+        ON DUPLICATE KEY UPDATE
+            role_name = VALUES(role_name),
+            role_code = VALUES(role_code),
+            remark    = VALUES(remark)
+    </insert>
+
+    <delete id="deleteRolePermissions">
+        DELETE FROM sys_role_permission WHERE role_id = #{roleId}
+    </delete>
+
+    <insert id="insertRolePermission">
+        INSERT INTO sys_role_permission (role_id, permission_id) VALUES (#{roleId}, #{permissionId})
+    </insert>
+
+    <delete id="deleteRoleMenus">
+        DELETE FROM sys_role_menu WHERE role_id = #{roleId}
+    </delete>
+
+    <insert id="insertRoleMenu">
+        INSERT INTO sys_role_menu (role_id, menu_id) VALUES (#{roleId}, #{menuId})
+    </insert>
+
+    <select id="selectNextRoleId" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(role_id), 10) + 1 FROM sys_role
+    </select>
+
+    <select id="countByRoleCode" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM sys_role
+        WHERE role_code = #{roleCode}
+          AND (#{excludeRoleId} IS NULL OR role_id != #{excludeRoleId})
+    </select>
+
+    <select id="selectAllPermissions" resultMap="PermissionResultMap">
+        SELECT * FROM sys_permission ORDER BY permission_id
+    </select>
+
+    <select id="selectPermissionsByType" resultMap="PermissionResultMap">
+        SELECT * FROM sys_permission WHERE type = #{type} ORDER BY permission_id
+    </select>
+
+</mapper>

@@ -2,59 +2,65 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.dto.RoleDtos;
+import com.lab.booking.mapper.RoleMapper;
 import com.lab.booking.model.PermissionEntity;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.RoleEntity;
 import com.lab.booking.model.UserEntity;
-import com.lab.booking.repository.RolePermissionRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class RolePermissionService {
 
-    private final RolePermissionRepository rolePermissionRepository;
+    private final RoleMapper roleMapper;
     private final AuthService authService;
 
-    public RolePermissionService(RolePermissionRepository rolePermissionRepository, AuthService authService) {
-        this.rolePermissionRepository = rolePermissionRepository;
+    public RolePermissionService(RoleMapper roleMapper, AuthService authService) {
+        this.roleMapper = roleMapper;
         this.authService = authService;
     }
 
     public List<RoleEntity> listRoles() {
         requireSuperAdmin();
-        return rolePermissionRepository.findAllRoles().stream()
+        return roleMapper.selectAllRoles().stream()
+                .map(this::fillRelations)
                 .sorted(Comparator.comparing(RoleEntity::getRoleId))
                 .toList();
     }
 
     public RoleEntity createRole(RoleDtos.SaveRoleRequest request) {
         requireSuperAdmin();
-        if (rolePermissionRepository.existsByRoleCode(request.roleCode(), -1L)) {
+        Integer count = roleMapper.countByRoleCode(request.roleCode(), -1L);
+        if (count != null && count > 0) {
             throw new ApiException(409, "角色编码已存在");
         }
         RoleEntity role = new RoleEntity();
-        role.setRoleId(rolePermissionRepository.nextRoleId());
+        Long nextId = roleMapper.selectNextRoleId();
+        role.setRoleId(nextId == null ? 11L : nextId);
         role.setRoleName(request.roleName());
         role.setRoleCode(request.roleCode());
         role.setRemark(request.remark());
-        rolePermissionRepository.saveRole(role);
+        role.setPermissionIds(new ArrayList<>());
+        role.setMenuIds(new ArrayList<>());
+        saveRoleWithRelations(role);
         return role;
     }
 
     public RoleEntity updateRole(Long roleId, RoleDtos.SaveRoleRequest request) {
         requireSuperAdmin();
         RoleEntity role = getRole(roleId);
-        if (rolePermissionRepository.existsByRoleCode(request.roleCode(), roleId)) {
+        Integer count = roleMapper.countByRoleCode(request.roleCode(), roleId);
+        if (count != null && count > 0) {
             throw new ApiException(409, "角色编码已存在");
         }
         role.setRoleName(request.roleName());
         role.setRoleCode(request.roleCode());
         role.setRemark(request.remark());
-        rolePermissionRepository.saveRole(role);
+        saveRoleWithRelations(role);
         return role;
     }
 
@@ -68,20 +74,44 @@ public class RolePermissionService {
         RoleEntity role = getRole(roleId);
         role.setPermissionIds(request.permissionIds());
         role.setMenuIds(request.menuIds());
-        rolePermissionRepository.saveRole(role);
+        saveRoleWithRelations(role);
         return role;
     }
 
     public List<PermissionEntity> listPermissions(String type) {
         requireSuperAdmin();
-        return rolePermissionRepository.findPermissions(type).stream()
+        List<PermissionEntity> permissions = type == null
+                ? roleMapper.selectAllPermissions()
+                : roleMapper.selectPermissionsByType(type);
+        return permissions.stream()
                 .sorted(Comparator.comparing(PermissionEntity::permissionId))
                 .toList();
     }
 
     private RoleEntity getRole(Long roleId) {
-        return rolePermissionRepository.findRoleById(roleId)
-                .orElseThrow(() -> new ApiException(404, "角色不存在"));
+        RoleEntity role = roleMapper.selectRoleById(roleId);
+        if (role == null) {
+            throw new ApiException(404, "角色不存在");
+        }
+        return fillRelations(role);
+    }
+
+    private RoleEntity fillRelations(RoleEntity role) {
+        role.setPermissionIds(new ArrayList<>(roleMapper.selectPermissionIdsByRoleId(role.getRoleId())));
+        role.setMenuIds(new ArrayList<>(roleMapper.selectMenuIdsByRoleId(role.getRoleId())));
+        return role;
+    }
+
+    private void saveRoleWithRelations(RoleEntity role) {
+        roleMapper.upsertRole(role);
+        roleMapper.deleteRolePermissions(role.getRoleId());
+        for (Long permissionId : role.getPermissionIds()) {
+            roleMapper.insertRolePermission(role.getRoleId(), permissionId);
+        }
+        roleMapper.deleteRoleMenus(role.getRoleId());
+        for (Long menuId : role.getMenuIds()) {
+            roleMapper.insertRoleMenu(role.getRoleId(), menuId);
+        }
     }
 
     private void requireSuperAdmin() {

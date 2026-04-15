@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.booking.mapper.TaskExecutionLogMapper">
+
+    <resultMap id="TaskLogResultMap" type="com.lab.booking.model.TaskExecutionLogEntity">
+        <id     property="logId"              column="log_id"/>
+        <result property="taskCode"           column="task_code"/>
+        <result property="taskName"           column="task_name"/>
+        <result property="status"             column="status"
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="startedAt"          column="started_at"/>
+        <result property="finishedAt"         column="finished_at"/>
+        <result property="durationMs"         column="duration_ms"/>
+        <result property="summary"            column="summary"/>
+        <result property="errorMessage"       column="error_message"/>
+        <result property="resultSnapshot"     column="result_snapshot_json"
+                typeHandler="com.lab.booking.config.JsonMapTypeHandler"/>
+    </resultMap>
+
+    <select id="selectNextLogId" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(log_id), 9000) + 1 FROM lab_task_execution_log
+    </select>
+
+    <insert id="upsertLog">
+        INSERT INTO lab_task_execution_log (
+            log_id, task_code, task_name, status,
+            started_at, finished_at, duration_ms, summary, error_message, result_snapshot_json
+        ) VALUES (
+            #{logId}, #{taskCode}, #{taskName},
+            #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler},
+            #{startedAt}, #{finishedAt}, #{durationMs}, #{summary}, #{errorMessage},
+            #{resultSnapshot, typeHandler=com.lab.booking.config.JsonMapTypeHandler}
+        )
+        ON DUPLICATE KEY UPDATE
+            task_code            = VALUES(task_code),
+            task_name            = VALUES(task_name),
+            status               = VALUES(status),
+            started_at           = VALUES(started_at),
+            finished_at          = VALUES(finished_at),
+            duration_ms          = VALUES(duration_ms),
+            summary              = VALUES(summary),
+            error_message        = VALUES(error_message),
+            result_snapshot_json = VALUES(result_snapshot_json)
+    </insert>
+
+    <select id="selectById" resultMap="TaskLogResultMap">
+        SELECT * FROM lab_task_execution_log WHERE log_id = #{logId} LIMIT 1
+    </select>
+
+    <select id="selectAll" resultMap="TaskLogResultMap">
+        SELECT * FROM lab_task_execution_log ORDER BY log_id
+    </select>
+
+</mapper>

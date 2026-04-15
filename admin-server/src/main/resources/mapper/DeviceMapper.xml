@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.booking.mapper.DeviceMapper">
+
+    <resultMap id="DeviceResultMap" type="com.lab.booking.model.DeviceEntity">
+        <id     property="deviceId"   column="device_id"/>
+        <result property="deviceName" column="device_name"/>
+        <result property="deviceCode" column="device_code"/>
+        <result property="category"   column="category"/>
+        <result property="status"     column="status"
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="location"   column="location"/>
+        <result property="imageUrl"   column="image_url"/>
+        <result property="description" column="description"/>
+    </resultMap>
+
+    <select id="selectAll" resultMap="DeviceResultMap">
+        SELECT * FROM lab_device ORDER BY device_id
+    </select>
+
+    <select id="selectById" resultMap="DeviceResultMap">
+        SELECT * FROM lab_device WHERE device_id = #{deviceId} LIMIT 1
+    </select>
+
+    <select id="countByDeviceCode" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM lab_device
+        WHERE device_code = #{deviceCode}
+          AND (#{excludeId} IS NULL OR device_id != #{excludeId})
+    </select>
+
+    <select id="selectNextDeviceId" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(device_id), 1000) + 1 FROM lab_device
+    </select>
+
+    <insert id="upsertDevice">
+        INSERT INTO lab_device (
+            device_id, device_name, device_code, category, status, location, image_url, description
+        ) VALUES (
+            #{deviceId}, #{deviceName}, #{deviceCode}, #{category},
+            #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler},
+            #{location}, #{imageUrl}, #{description}
+        )
+        ON DUPLICATE KEY UPDATE
+            device_name = VALUES(device_name),
+            device_code = VALUES(device_code),
+            category    = VALUES(category),
+            status      = VALUES(status),
+            location    = VALUES(location),
+            image_url   = VALUES(image_url),
+            description = VALUES(description)
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM lab_device WHERE device_id = #{deviceId}
+    </delete>
+
+</mapper>

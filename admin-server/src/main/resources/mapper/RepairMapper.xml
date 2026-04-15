@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.booking.mapper.RepairMapper">
+
+    <resultMap id="RepairResultMap" type="com.lab.booking.model.RepairEntity">
+        <id     property="repairId"    column="repair_id"/>
+        <result property="deviceId"    column="device_id"/>
+        <result property="applicantId" column="applicant_id"/>
+        <result property="description" column="description"/>
+        <result property="status"      column="status"
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="comment"     column="comment"/>
+        <result property="createdAt"   column="created_at"/>
+        <result property="updatedAt"   column="updated_at"/>
+    </resultMap>
+
+    <select id="selectNextRepairId" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(repair_id), 4000) + 1 FROM lab_repair
+    </select>
+
+    <insert id="upsertRepair">
+        INSERT INTO lab_repair (
+            repair_id, device_id, applicant_id, description, status, comment, created_at, updated_at
+        ) VALUES (
+            #{repairId}, #{deviceId}, #{applicantId}, #{description},
+            #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler},
+            #{comment}, #{createdAt}, #{updatedAt}
+        )
+        ON DUPLICATE KEY UPDATE
+            device_id    = VALUES(device_id),
+            applicant_id = VALUES(applicant_id),
+            description  = VALUES(description),
+            status       = VALUES(status),
+            comment      = VALUES(comment),
+            created_at   = VALUES(created_at),
+            updated_at   = VALUES(updated_at)
+    </insert>
+
+    <select id="selectById" resultMap="RepairResultMap">
+        SELECT * FROM lab_repair WHERE repair_id = #{repairId} LIMIT 1
+    </select>
+
+    <select id="selectAll" resultMap="RepairResultMap">
+        SELECT * FROM lab_repair ORDER BY repair_id
+    </select>
+
+</mapper>

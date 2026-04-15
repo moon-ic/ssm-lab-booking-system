@@ -2,14 +2,14 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.dto.DeviceDtos;
+import com.lab.booking.mapper.BorrowRecordMapper;
+import com.lab.booking.mapper.DeviceMapper;
+import com.lab.booking.mapper.RepairMapper;
+import com.lab.booking.mapper.ReservationMapper;
 import com.lab.booking.model.DeviceEntity;
 import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.UserEntity;
-import com.lab.booking.repository.BorrowRecordRepository;
-import com.lab.booking.repository.DeviceRepository;
-import com.lab.booking.repository.RepairRepository;
-import com.lab.booking.repository.ReservationRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,32 +30,32 @@ import java.util.Map;
 @Service
 public class DeviceService {
 
-    private final DeviceRepository deviceRepository;
-    private final BorrowRecordRepository borrowRecordRepository;
-    private final ReservationRepository reservationRepository;
-    private final RepairRepository repairRepository;
+    private final DeviceMapper deviceMapper;
+    private final BorrowRecordMapper borrowRecordMapper;
+    private final ReservationMapper reservationMapper;
+    private final RepairMapper repairMapper;
     private final AuthService authService;
     private final Path deviceUploadDir;
 
     public DeviceService(
-            DeviceRepository deviceRepository,
-            BorrowRecordRepository borrowRecordRepository,
-            ReservationRepository reservationRepository,
-            RepairRepository repairRepository,
+            DeviceMapper deviceMapper,
+            BorrowRecordMapper borrowRecordMapper,
+            ReservationMapper reservationMapper,
+            RepairMapper repairMapper,
             AuthService authService,
             @Value("${app.storage.upload-dir:${user.dir}/uploads}") String uploadDir
     ) {
-        this.deviceRepository = deviceRepository;
-        this.borrowRecordRepository = borrowRecordRepository;
-        this.reservationRepository = reservationRepository;
-        this.repairRepository = repairRepository;
+        this.deviceMapper = deviceMapper;
+        this.borrowRecordMapper = borrowRecordMapper;
+        this.reservationMapper = reservationMapper;
+        this.repairMapper = repairMapper;
         this.authService = authService;
         this.deviceUploadDir = Path.of(uploadDir, "devices").toAbsolutePath().normalize();
     }
 
     public Map<String, Object> listDevices(String keyword, String category, DeviceStatus status, Integer pageNum, Integer pageSize) {
         authService.currentUser();
-        List<Map<String, Object>> filtered = deviceRepository.findAll().stream()
+        List<Map<String, Object>> filtered = deviceMapper.selectAll().stream()
                 .filter(device -> keyword == null || matchesKeyword(device, keyword))
                 .filter(device -> category == null || category.equals(device.getCategory()))
                 .filter(device -> status == null || status == device.getStatus())
@@ -85,7 +85,7 @@ public class DeviceService {
         requireAdmin();
         ensureDeviceCodeUnique(request.deviceCode(), -1L);
         DeviceEntity device = new DeviceEntity();
-        device.setDeviceId(deviceRepository.nextDeviceId());
+        device.setDeviceId(nextDeviceId());
         device.setDeviceName(request.deviceName());
         device.setDeviceCode(request.deviceCode());
         device.setCategory(request.category());
@@ -93,7 +93,7 @@ public class DeviceService {
         device.setLocation(request.location());
         device.setImageUrl(request.imageUrl());
         device.setDescription(request.description());
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
         return toDeviceDetail(device);
     }
 
@@ -107,7 +107,7 @@ public class DeviceService {
         device.setLocation(request.location());
         device.setImageUrl(request.imageUrl());
         device.setDescription(request.description());
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
         return toDeviceDetail(device);
     }
 
@@ -115,7 +115,7 @@ public class DeviceService {
         requireAdmin();
         DeviceEntity device = getExistingDevice(deviceId);
         device.setStatus(request.status());
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
     }
 
     public void deleteDevice(Long deviceId) {
@@ -123,7 +123,7 @@ public class DeviceService {
         DeviceEntity device = getExistingDevice(deviceId);
         ensureNoRelatedHistory(deviceId);
         deleteStoredImageIfPresent(device.getImageUrl());
-        deviceRepository.deleteById(deviceId);
+        deviceMapper.deleteById(deviceId);
     }
 
     public Map<String, Object> importDevice(String deviceName, String category, String location, String description, MultipartFile image) {
@@ -135,7 +135,7 @@ public class DeviceService {
             throw new ApiException(400, "image 不能为空");
         }
 
-        long deviceId = deviceRepository.nextDeviceId();
+        long deviceId = nextDeviceId();
         DeviceEntity device = new DeviceEntity();
         device.setDeviceId(deviceId);
         device.setDeviceCode(generateDeviceCode(deviceId));
@@ -145,19 +145,28 @@ public class DeviceService {
         device.setLocation(location == null || location.isBlank() ? "TBD" : location.trim());
         device.setImageUrl(storeImage(deviceId, image));
         device.setDescription(description);
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
         return toDeviceDetail(device);
     }
 
     private DeviceEntity getExistingDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId)
-                .orElseThrow(() -> new ApiException(404, "设备不存在"));
+        DeviceEntity device = deviceMapper.selectById(deviceId);
+        if (device == null) {
+            throw new ApiException(404, "设备不存在");
+        }
+        return device;
     }
 
     private void ensureDeviceCodeUnique(String deviceCode, Long excludeId) {
-        if (deviceRepository.existsByDeviceCode(deviceCode, excludeId)) {
+        Integer count = deviceMapper.countByDeviceCode(deviceCode, excludeId);
+        if (count != null && count > 0) {
             throw new ApiException(409, "设备编号已存在");
         }
+    }
+
+    private long nextDeviceId() {
+        Long next = deviceMapper.selectNextDeviceId();
+        return next == null ? 1001L : next;
     }
 
     private void requireAdmin() {
@@ -175,11 +184,11 @@ public class DeviceService {
     }
 
     private void ensureNoRelatedHistory(Long deviceId) {
-        boolean relatedReservationExists = reservationRepository.findAll().stream()
+        boolean relatedReservationExists = reservationMapper.selectAll().stream()
                 .anyMatch(item -> deviceId.equals(item.getDeviceId()));
-        boolean relatedBorrowRecordExists = borrowRecordRepository.findAll().stream()
+        boolean relatedBorrowRecordExists = borrowRecordMapper.selectAll().stream()
                 .anyMatch(item -> deviceId.equals(item.getDeviceId()));
-        boolean relatedRepairExists = repairRepository.findAll().stream()
+        boolean relatedRepairExists = repairMapper.selectAll().stream()
                 .anyMatch(item -> deviceId.equals(item.getDeviceId()));
 
         if (relatedReservationExists || relatedBorrowRecordExists || relatedRepairExists) {
@@ -281,7 +290,6 @@ public class DeviceService {
         try {
             Files.deleteIfExists(target);
         } catch (IOException ignored) {
-            // Ignore file cleanup failures so deleting the device record still succeeds.
         }
     }
 }

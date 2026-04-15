@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.booking.mapper.BorrowRecordMapper">
+
+    <resultMap id="BorrowRecordResultMap" type="com.lab.booking.model.BorrowRecordEntity">
+        <id     property="recordId"           column="record_id"/>
+        <result property="reservationId"      column="reservation_id"/>
+        <result property="userId"             column="user_id"/>
+        <result property="deviceId"           column="device_id"/>
+        <result property="status"             column="status"
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="pickupTime"         column="pickup_time"/>
+        <result property="expectedReturnTime" column="expected_return_time"/>
+        <result property="returnTime"         column="return_time"/>
+        <result property="deviceCondition"    column="device_condition"/>
+    </resultMap>
+
+    <select id="selectNextRecordId" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(record_id), 3000) + 1 FROM lab_borrow_record
+    </select>
+
+    <insert id="upsertBorrowRecord">
+        INSERT INTO lab_borrow_record (
+            record_id, reservation_id, user_id, device_id, status,
+            pickup_time, expected_return_time, return_time, device_condition
+        ) VALUES (
+            #{recordId}, #{reservationId}, #{userId}, #{deviceId},
+            #{status, typeHandler=org.apache.ibatis.type.EnumTypeHandler},
+            #{pickupTime}, #{expectedReturnTime}, #{returnTime}, #{deviceCondition}
+        )
+        ON DUPLICATE KEY UPDATE
+            reservation_id      = VALUES(reservation_id),
+            user_id             = VALUES(user_id),
+            device_id           = VALUES(device_id),
+            status              = VALUES(status),
+            pickup_time         = VALUES(pickup_time),
+            expected_return_time = VALUES(expected_return_time),
+            return_time         = VALUES(return_time),
+            device_condition    = VALUES(device_condition)
+    </insert>
+
+    <select id="selectById" resultMap="BorrowRecordResultMap">
+        SELECT * FROM lab_borrow_record WHERE record_id = #{recordId} LIMIT 1
+    </select>
+
+    <select id="selectByReservationId" resultMap="BorrowRecordResultMap">
+        SELECT * FROM lab_borrow_record WHERE reservation_id = #{reservationId} LIMIT 1
+    </select>
+
+    <select id="selectAll" resultMap="BorrowRecordResultMap">
+        SELECT * FROM lab_borrow_record ORDER BY record_id
+    </select>
+
+</mapper>

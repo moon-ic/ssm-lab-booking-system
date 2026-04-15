@@ -2,6 +2,10 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.infrastructure.cache.AppCacheService;
+import com.lab.booking.mapper.BorrowRecordMapper;
+import com.lab.booking.mapper.DeviceMapper;
+import com.lab.booking.mapper.RepairMapper;
+import com.lab.booking.mapper.ReservationMapper;
 import com.lab.booking.model.BorrowRecordEntity;
 import com.lab.booking.model.BorrowStatus;
 import com.lab.booking.model.DeviceEntity;
@@ -12,10 +16,6 @@ import com.lab.booking.model.ReservationStatus;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.UserEntity;
 import com.lab.booking.repository.AuthRepository;
-import com.lab.booking.repository.BorrowRecordRepository;
-import com.lab.booking.repository.DeviceRepository;
-import com.lab.booking.repository.RepairRepository;
-import com.lab.booking.repository.ReservationRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -33,27 +33,27 @@ public class StatisticsService {
 
     private static final String OVERVIEW_CACHE_KEY = "statistics:overview";
 
-    private final DeviceRepository deviceRepository;
-    private final BorrowRecordRepository borrowRecordRepository;
-    private final ReservationRepository reservationRepository;
-    private final RepairRepository repairRepository;
+    private final DeviceMapper deviceMapper;
+    private final BorrowRecordMapper borrowRecordMapper;
+    private final ReservationMapper reservationMapper;
+    private final RepairMapper repairMapper;
     private final AuthRepository authRepository;
     private final AuthService authService;
     private final AppCacheService cacheService;
 
     public StatisticsService(
-            DeviceRepository deviceRepository,
-            BorrowRecordRepository borrowRecordRepository,
-            ReservationRepository reservationRepository,
-            RepairRepository repairRepository,
+            DeviceMapper deviceMapper,
+            BorrowRecordMapper borrowRecordMapper,
+            ReservationMapper reservationMapper,
+            RepairMapper repairMapper,
             AuthRepository authRepository,
             AuthService authService,
             AppCacheService cacheService
     ) {
-        this.deviceRepository = deviceRepository;
-        this.borrowRecordRepository = borrowRecordRepository;
-        this.reservationRepository = reservationRepository;
-        this.repairRepository = repairRepository;
+        this.deviceMapper = deviceMapper;
+        this.borrowRecordMapper = borrowRecordMapper;
+        this.reservationMapper = reservationMapper;
+        this.repairMapper = repairMapper;
         this.authRepository = authRepository;
         this.authService = authService;
         this.cacheService = cacheService;
@@ -64,7 +64,7 @@ public class StatisticsService {
         DateRange range = resolveRange(startDate, endDate, rankScope);
         int actualTopN = normalizeTopN(topN);
 
-        return borrowRecordRepository.findAll().stream()
+        return borrowRecordMapper.selectAll().stream()
                 .filter(record -> inRange(record.getPickupTime(), range)
                         || inRange(record.getExpectedReturnTime(), range)
                         || inRange(record.getReturnTime(), range))
@@ -73,7 +73,7 @@ public class StatisticsService {
                 .sorted(Map.Entry.<Long, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
                 .limit(actualTopN)
                 .map(entry -> {
-                    DeviceEntity device = findDevice(entry.getKey());
+                    DeviceEntity device = deviceMapper.selectById(entry.getKey());
                     Map<String, Object> result = new LinkedHashMap<>();
                     result.put("deviceId", entry.getKey());
                     result.put("deviceName", device == null ? "已删除设备 #" + entry.getKey() : device.getDeviceName());
@@ -91,7 +91,7 @@ public class StatisticsService {
         DateRange range = resolveRange(null, null, rankScope);
         int actualTopN = normalizeTopN(topN);
 
-        return deviceRepository.findAll().stream()
+        return deviceMapper.selectAll().stream()
                 .map(device -> toDamageView(device, range))
                 .filter(Objects::nonNull)
                 .sorted(Comparator.<Map<String, Object>, Long>comparing(item -> ((Number) item.get("damageCount")).longValue()).reversed()
@@ -124,17 +124,17 @@ public class StatisticsService {
     }
 
     private Map<String, Object> computeAndCacheOverview() {
-        long deviceTotal = deviceRepository.findAll().size();
-        long availableDeviceTotal = deviceRepository.findAll().stream()
+        long deviceTotal = deviceMapper.selectAll().size();
+        long availableDeviceTotal = deviceMapper.selectAll().stream()
                 .filter(device -> device.getStatus() == DeviceStatus.AVAILABLE)
                 .count();
-        long borrowingTotal = borrowRecordRepository.findAll().stream()
+        long borrowingTotal = borrowRecordMapper.selectAll().stream()
                 .filter(record -> record.getStatus() == BorrowStatus.BORROWING || record.getStatus() == BorrowStatus.OVERDUE)
                 .count();
-        long pendingReservationTotal = reservationRepository.findAll().stream()
+        long pendingReservationTotal = reservationMapper.selectAll().stream()
                 .filter(reservation -> reservation.getStatus() == ReservationStatus.PENDING)
                 .count();
-        long pendingRepairTotal = repairRepository.findAll().stream()
+        long pendingRepairTotal = repairMapper.selectAll().stream()
                 .filter(repair -> repair.getStatus() == RepairStatus.PENDING)
                 .count();
 
@@ -149,7 +149,7 @@ public class StatisticsService {
     }
 
     private Map<String, Object> toDamageView(DeviceEntity device, DateRange range) {
-        long damageCount = repairRepository.findAll().stream()
+        long damageCount = repairMapper.selectAll().stream()
                 .filter(repair -> Objects.equals(repair.getDeviceId(), device.getDeviceId()))
                 .filter(repair -> inRange(repair.getCreatedAt(), range) || inRange(repair.getUpdatedAt(), range))
                 .count();
@@ -172,13 +172,13 @@ public class StatisticsService {
     }
 
     private Map<String, Object> toViolationView(UserEntity user, DateRange range) {
-        long overdueCount = borrowRecordRepository.findAll().stream()
+        long overdueCount = borrowRecordMapper.selectAll().stream()
                 .filter(record -> Objects.equals(record.getUserId(), user.getUserId()))
                 .filter(record -> record.getStatus() == BorrowStatus.OVERDUE)
                 .filter(record -> inRange(firstNonNull(record.getExpectedReturnTime(), record.getReturnTime(), record.getPickupTime()), range))
                 .count();
 
-        long damagedCount = borrowRecordRepository.findAll().stream()
+        long damagedCount = borrowRecordMapper.selectAll().stream()
                 .filter(record -> Objects.equals(record.getUserId(), user.getUserId()))
                 .filter(record -> record.getDeviceCondition() != null && !"NORMAL".equals(record.getDeviceCondition()))
                 .filter(record -> inRange(firstNonNull(record.getReturnTime(), record.getExpectedReturnTime(), record.getPickupTime()), range))
@@ -202,10 +202,6 @@ public class StatisticsService {
 
     private int normalizeTopN(Integer topN) {
         return topN == null || topN < 1 ? 10 : topN;
-    }
-
-    private DeviceEntity findDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId).orElse(null);
     }
 
     private DateRange resolveRange(String startDate, String endDate, RankScope rankScope) {

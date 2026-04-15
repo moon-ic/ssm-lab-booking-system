@@ -1,5 +1,8 @@
 package com.lab.booking.service;
 
+import com.lab.booking.mapper.BorrowRecordMapper;
+import com.lab.booking.mapper.DeviceMapper;
+import com.lab.booking.mapper.ReservationMapper;
 import com.lab.booking.model.BorrowRecordEntity;
 import com.lab.booking.model.BorrowStatus;
 import com.lab.booking.model.DeviceEntity;
@@ -7,9 +10,6 @@ import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.NotificationType;
 import com.lab.booking.model.ReservationEntity;
 import com.lab.booking.model.ReservationStatus;
-import com.lab.booking.repository.BorrowRecordRepository;
-import com.lab.booking.repository.DeviceRepository;
-import com.lab.booking.repository.ReservationRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,22 +26,22 @@ public class SystemTaskService {
     private static final String REMINDER_TASK_CODE = "GENERATE_BORROW_REMINDERS";
     private static final String REMINDER_TASK_NAME = "生成借用提醒";
 
-    private final ReservationRepository reservationRepository;
-    private final BorrowRecordRepository borrowRecordRepository;
-    private final DeviceRepository deviceRepository;
+    private final ReservationMapper reservationMapper;
+    private final BorrowRecordMapper borrowRecordMapper;
+    private final DeviceMapper deviceMapper;
     private final NotificationService notificationService;
     private final TaskExecutionLogService taskExecutionLogService;
 
     public SystemTaskService(
-            ReservationRepository reservationRepository,
-            BorrowRecordRepository borrowRecordRepository,
-            DeviceRepository deviceRepository,
+            ReservationMapper reservationMapper,
+            BorrowRecordMapper borrowRecordMapper,
+            DeviceMapper deviceMapper,
             NotificationService notificationService,
             TaskExecutionLogService taskExecutionLogService
     ) {
-        this.reservationRepository = reservationRepository;
-        this.borrowRecordRepository = borrowRecordRepository;
-        this.deviceRepository = deviceRepository;
+        this.reservationMapper = reservationMapper;
+        this.borrowRecordMapper = borrowRecordMapper;
+        this.deviceMapper = deviceMapper;
         this.notificationService = notificationService;
         this.taskExecutionLogService = taskExecutionLogService;
     }
@@ -64,18 +64,18 @@ public class SystemTaskService {
         try {
             int count = 0;
             int notificationCount = 0;
-            for (ReservationEntity reservation : reservationRepository.findAll()) {
+            for (ReservationEntity reservation : reservationMapper.selectAll()) {
                 if (reservation.getStatus() != ReservationStatus.PICKUP_PENDING) {
                     continue;
                 }
                 if (reservation.getEndTime() == null || reservation.getEndTime().isAfter(now)) {
                     continue;
                 }
-                BorrowRecordEntity record = borrowRecordRepository.findByReservationId(reservation.getReservationId()).orElse(null);
+                BorrowRecordEntity record = borrowRecordMapper.selectByReservationId(reservation.getReservationId());
                 if (record == null || record.getStatus() != BorrowStatus.PICKUP_PENDING) {
                     continue;
                 }
-                DeviceEntity device = deviceRepository.findById(reservation.getDeviceId()).orElse(null);
+                DeviceEntity device = deviceMapper.selectById(reservation.getDeviceId());
                 if (device == null || device.getStatus() != DeviceStatus.RESERVED) {
                     continue;
                 }
@@ -83,9 +83,9 @@ public class SystemTaskService {
                 reservation.setStatus(ReservationStatus.EXPIRED);
                 record.setStatus(BorrowStatus.OVERDUE);
                 device.setStatus(DeviceStatus.AVAILABLE);
-                reservationRepository.save(reservation);
-                borrowRecordRepository.save(record);
-                deviceRepository.save(device);
+                reservationMapper.upsertReservation(reservation);
+                borrowRecordMapper.upsertBorrowRecord(record);
+                deviceMapper.upsertDevice(device);
 
                 boolean created = notificationService.createSystemNotificationIfAbsent(
                         reservation.getApplicantId(),
@@ -118,7 +118,7 @@ public class SystemTaskService {
         try {
             int count = 0;
             int notificationCount = 0;
-            for (BorrowRecordEntity record : borrowRecordRepository.findAll()) {
+            for (BorrowRecordEntity record : borrowRecordMapper.selectAll()) {
                 if (record.getStatus() != BorrowStatus.BORROWING) {
                     continue;
                 }
@@ -126,9 +126,9 @@ public class SystemTaskService {
                     continue;
                 }
                 record.setStatus(BorrowStatus.OVERDUE);
-                borrowRecordRepository.save(record);
+                borrowRecordMapper.upsertBorrowRecord(record);
 
-                DeviceEntity device = deviceRepository.findById(record.getDeviceId()).orElse(null);
+                DeviceEntity device = deviceMapper.selectById(record.getDeviceId());
                 boolean created = notificationService.createSystemNotificationIfAbsent(
                         record.getUserId(),
                         NotificationType.BORROW_OVERDUE,
@@ -161,11 +161,11 @@ public class SystemTaskService {
             int aboutToExpireCount = 0;
             int overdueCount = 0;
             int notificationCount = 0;
-            for (BorrowRecordEntity record : borrowRecordRepository.findAll()) {
+            for (BorrowRecordEntity record : borrowRecordMapper.selectAll()) {
                 if (record.getExpectedReturnTime() == null) {
                     continue;
                 }
-                DeviceEntity device = deviceRepository.findById(record.getDeviceId()).orElse(null);
+                DeviceEntity device = deviceMapper.selectById(record.getDeviceId());
                 String deviceName = device == null ? String.valueOf(record.getDeviceId()) : device.getDeviceName();
                 if (record.getStatus() == BorrowStatus.BORROWING
                         && !record.getExpectedReturnTime().isBefore(now)

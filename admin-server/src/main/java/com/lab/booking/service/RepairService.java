@@ -2,6 +2,8 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.dto.RepairDtos;
+import com.lab.booking.mapper.DeviceMapper;
+import com.lab.booking.mapper.RepairMapper;
 import com.lab.booking.model.DeviceEntity;
 import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.RepairEntity;
@@ -9,8 +11,6 @@ import com.lab.booking.model.RepairStatus;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.UserEntity;
 import com.lab.booking.repository.AuthRepository;
-import com.lab.booking.repository.DeviceRepository;
-import com.lab.booking.repository.RepairRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,19 +26,19 @@ public class RepairService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final RepairRepository repairRepository;
-    private final DeviceRepository deviceRepository;
+    private final RepairMapper repairMapper;
+    private final DeviceMapper deviceMapper;
     private final AuthRepository authRepository;
     private final AuthService authService;
 
     public RepairService(
-            RepairRepository repairRepository,
-            DeviceRepository deviceRepository,
+            RepairMapper repairMapper,
+            DeviceMapper deviceMapper,
             AuthRepository authRepository,
             AuthService authService
     ) {
-        this.repairRepository = repairRepository;
-        this.deviceRepository = deviceRepository;
+        this.repairMapper = repairMapper;
+        this.deviceMapper = deviceMapper;
         this.authRepository = authRepository;
         this.authService = authService;
     }
@@ -49,23 +49,24 @@ public class RepairService {
         ensureNoActiveRepair(request.deviceId());
 
         RepairEntity repair = new RepairEntity();
-        repair.setRepairId(repairRepository.nextRepairId());
+        Long nextId = repairMapper.selectNextRepairId();
+        repair.setRepairId(nextId == null ? 4001L : nextId);
         repair.setDeviceId(request.deviceId());
         repair.setApplicantId(applicant.getUserId());
         repair.setDescription(request.description().trim());
         repair.setStatus(RepairStatus.PENDING);
         repair.setCreatedAt(LocalDateTime.now());
         repair.setUpdatedAt(repair.getCreatedAt());
-        repairRepository.save(repair);
+        repairMapper.upsertRepair(repair);
 
         device.setStatus(DeviceStatus.REPAIRING);
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
         return toRepairView(repair);
     }
 
     public Map<String, Object> listRepairs(RepairStatus status, Long deviceId, Long applicantId, Integer pageNum, Integer pageSize) {
         UserEntity currentUser = requireRoles(RoleCode.SUPER_ADMIN, RoleCode.ADMIN, RoleCode.TEACHER, RoleCode.STUDENT);
-        List<Map<String, Object>> filtered = repairRepository.findAll().stream()
+        List<Map<String, Object>> filtered = repairMapper.selectAll().stream()
                 .filter(repair -> visibleTo(currentUser, repair))
                 .filter(repair -> status == null || repair.getStatus() == status)
                 .filter(repair -> deviceId == null || Objects.equals(repair.getDeviceId(), deviceId))
@@ -104,20 +105,20 @@ public class RepairService {
         repair.setStatus(request.status());
         repair.setComment(blankToNull(request.comment()));
         repair.setUpdatedAt(LocalDateTime.now());
-        repairRepository.save(repair);
+        repairMapper.upsertRepair(repair);
 
         switch (request.status()) {
             case PENDING, PROCESSING -> device.setStatus(DeviceStatus.REPAIRING);
             case COMPLETED -> device.setStatus(DeviceStatus.AVAILABLE);
             case UNREPAIRABLE -> device.setStatus(DeviceStatus.DAMAGED);
         }
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
 
         return toRepairView(repair);
     }
 
     private void ensureNoActiveRepair(Long deviceId) {
-        boolean activeRepairExists = repairRepository.findAll().stream()
+        boolean activeRepairExists = repairMapper.selectAll().stream()
                 .anyMatch(repair -> Objects.equals(repair.getDeviceId(), deviceId)
                         && repair.getStatus() != RepairStatus.COMPLETED
                         && repair.getStatus() != RepairStatus.UNREPAIRABLE);
@@ -139,17 +140,23 @@ public class RepairService {
     }
 
     private RepairEntity getExistingRepair(Long repairId) {
-        return repairRepository.findById(repairId)
-                .orElseThrow(() -> new ApiException(404, "维修申请不存在"));
+        RepairEntity repair = repairMapper.selectById(repairId);
+        if (repair == null) {
+            throw new ApiException(404, "维修申请不存在");
+        }
+        return repair;
     }
 
     private DeviceEntity getExistingDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId)
-                .orElseThrow(() -> new ApiException(404, "设备不存在"));
+        DeviceEntity device = deviceMapper.selectById(deviceId);
+        if (device == null) {
+            throw new ApiException(404, "设备不存在");
+        }
+        return device;
     }
 
     private DeviceEntity findDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId).orElse(null);
+        return deviceMapper.selectById(deviceId);
     }
 
     private UserEntity getExistingUser(Long userId) {

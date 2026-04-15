@@ -19,6 +19,13 @@ spring:
       database: ${REDIS_DATABASE:0}
       timeout: 3s
 
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.lab.booking.model
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+
 app:
   security:
     token-header: Authorization

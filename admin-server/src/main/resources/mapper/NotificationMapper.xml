@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.booking.mapper.NotificationMapper">
+
+    <resultMap id="NotificationResultMap" type="com.lab.booking.model.NotificationEntity">
+        <id     property="notificationId" column="notification_id"/>
+        <result property="userId"         column="user_id"/>
+        <result property="type"           column="type"
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result property="title"          column="title"/>
+        <result property="content"        column="content"/>
+        <result property="relatedBizType" column="related_biz_type"/>
+        <result property="relatedBizId"   column="related_biz_id"/>
+        <result property="read"           column="is_read"/>
+        <result property="createdAt"      column="created_at"/>
+        <result property="readAt"         column="read_at"/>
+    </resultMap>
+
+    <select id="selectNextNotificationId" resultType="java.lang.Long">
+        SELECT COALESCE(MAX(notification_id), 8000) + 1 FROM lab_notification
+    </select>
+
+    <insert id="upsertNotification">
+        INSERT INTO lab_notification (
+            notification_id, user_id, type, title, content,
+            related_biz_type, related_biz_id, is_read, created_at, read_at
+        ) VALUES (
+            #{notificationId}, #{userId},
+            #{type, typeHandler=org.apache.ibatis.type.EnumTypeHandler},
+            #{title}, #{content},
+            #{relatedBizType}, #{relatedBizId}, #{read}, #{createdAt}, #{readAt}
+        )
+        ON DUPLICATE KEY UPDATE
+            user_id          = VALUES(user_id),
+            type             = VALUES(type),
+            title            = VALUES(title),
+            content          = VALUES(content),
+            related_biz_type = VALUES(related_biz_type),
+            related_biz_id   = VALUES(related_biz_id),
+            is_read          = VALUES(is_read),
+            created_at       = VALUES(created_at),
+            read_at          = VALUES(read_at)
+    </insert>
+
+    <select id="selectById" resultMap="NotificationResultMap">
+        SELECT * FROM lab_notification WHERE notification_id = #{notificationId} LIMIT 1
+    </select>
+
+    <select id="selectAll" resultMap="NotificationResultMap">
+        SELECT * FROM lab_notification ORDER BY notification_id
+    </select>
+
+    <select id="countUnread" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM lab_notification
+        WHERE user_id = #{userId}
+          AND type    = #{type, typeHandler=org.apache.ibatis.type.EnumTypeHandler}
+          AND is_read = 0
+          AND ((related_biz_type IS NULL AND #{relatedBizType} IS NULL) OR related_biz_type = #{relatedBizType})
+          AND ((related_biz_id   IS NULL AND #{relatedBizId}   IS NULL) OR related_biz_id   = #{relatedBizId})
+    </select>
+
+</mapper>

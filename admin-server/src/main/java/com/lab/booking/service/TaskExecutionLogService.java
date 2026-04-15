@@ -1,11 +1,11 @@
 package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
+import com.lab.booking.mapper.TaskExecutionLogMapper;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.TaskExecutionLogEntity;
 import com.lab.booking.model.TaskExecutionStatus;
 import com.lab.booking.model.UserEntity;
-import com.lab.booking.repository.TaskExecutionLogRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -21,11 +21,11 @@ public class TaskExecutionLogService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final TaskExecutionLogRepository taskExecutionLogRepository;
+    private final TaskExecutionLogMapper taskExecutionLogMapper;
     private final AuthService authService;
 
-    public TaskExecutionLogService(TaskExecutionLogRepository taskExecutionLogRepository, AuthService authService) {
-        this.taskExecutionLogRepository = taskExecutionLogRepository;
+    public TaskExecutionLogService(TaskExecutionLogMapper taskExecutionLogMapper, AuthService authService) {
+        this.taskExecutionLogMapper = taskExecutionLogMapper;
         this.authService = authService;
     }
 
@@ -37,7 +37,7 @@ public class TaskExecutionLogService {
             Map<String, Object> resultSnapshot
     ) {
         TaskExecutionLogEntity log = new TaskExecutionLogEntity();
-        log.setLogId(taskExecutionLogRepository.nextLogId());
+        log.setLogId(taskExecutionLogMapper.selectNextLogId());
         log.setTaskCode(taskCode);
         log.setTaskName(taskName);
         log.setStatus(TaskExecutionStatus.SUCCESS);
@@ -46,7 +46,7 @@ public class TaskExecutionLogService {
         log.setDurationMs(Duration.between(startedAt, finishedAt).toMillis());
         log.setSummary(buildSummary(resultSnapshot));
         log.setResultSnapshot(new LinkedHashMap<>(resultSnapshot));
-        taskExecutionLogRepository.save(log);
+        taskExecutionLogMapper.upsertLog(log);
     }
 
     public void recordFailure(
@@ -57,7 +57,7 @@ public class TaskExecutionLogService {
             RuntimeException ex
     ) {
         TaskExecutionLogEntity log = new TaskExecutionLogEntity();
-        log.setLogId(taskExecutionLogRepository.nextLogId());
+        log.setLogId(taskExecutionLogMapper.selectNextLogId());
         log.setTaskCode(taskCode);
         log.setTaskName(taskName);
         log.setStatus(TaskExecutionStatus.FAILED);
@@ -67,12 +67,12 @@ public class TaskExecutionLogService {
         log.setSummary("task failed");
         log.setErrorMessage(ex.getMessage());
         log.setResultSnapshot(Map.of());
-        taskExecutionLogRepository.save(log);
+        taskExecutionLogMapper.upsertLog(log);
     }
 
     public Map<String, Object> listLogs(String taskCode, TaskExecutionStatus status, Integer pageNum, Integer pageSize) {
         requireAdminRoles();
-        List<Map<String, Object>> filtered = taskExecutionLogRepository.findAll().stream()
+        List<Map<String, Object>> filtered = taskExecutionLogMapper.selectAll().stream()
                 .filter(log -> taskCode == null || taskCode.equalsIgnoreCase(log.getTaskCode()))
                 .filter(log -> status == null || log.getStatus() == status)
                 .sorted(Comparator.comparing(TaskExecutionLogEntity::getLogId).reversed())
@@ -94,8 +94,10 @@ public class TaskExecutionLogService {
 
     public Map<String, Object> getLog(Long logId) {
         requireAdminRoles();
-        TaskExecutionLogEntity log = taskExecutionLogRepository.findById(logId)
-                .orElseThrow(() -> new ApiException(404, "任务执行日志不存在"));
+        TaskExecutionLogEntity log = taskExecutionLogMapper.selectById(logId);
+        if (log == null) {
+            throw new ApiException(404, "任务执行日志不存在");
+        }
         return toView(log);
     }
 

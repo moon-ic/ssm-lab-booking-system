@@ -1,11 +1,11 @@
 package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
+import com.lab.booking.mapper.NotificationMapper;
 import com.lab.booking.model.NotificationEntity;
 import com.lab.booking.model.NotificationType;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.UserEntity;
-import com.lab.booking.repository.NotificationRepository;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -21,11 +21,11 @@ public class NotificationService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final NotificationRepository notificationRepository;
+    private final NotificationMapper notificationMapper;
     private final AuthService authService;
 
-    public NotificationService(NotificationRepository notificationRepository, @Lazy AuthService authService) {
-        this.notificationRepository = notificationRepository;
+    public NotificationService(NotificationMapper notificationMapper, @Lazy AuthService authService) {
+        this.notificationMapper = notificationMapper;
         this.authService = authService;
     }
 
@@ -38,11 +38,12 @@ public class NotificationService {
             Long relatedBizId,
             LocalDateTime createdAt
     ) {
-        if (notificationRepository.existsUnread(userId, type, relatedBizType, relatedBizId)) {
+        Integer count = notificationMapper.countUnread(userId, type, relatedBizType, relatedBizId);
+        if (count != null && count > 0) {
             return false;
         }
         NotificationEntity notification = new NotificationEntity();
-        notification.setNotificationId(notificationRepository.nextNotificationId());
+        notification.setNotificationId(notificationMapper.selectNextNotificationId());
         notification.setUserId(userId);
         notification.setType(type);
         notification.setTitle(title);
@@ -51,16 +52,16 @@ public class NotificationService {
         notification.setRelatedBizId(relatedBizId);
         notification.setRead(false);
         notification.setCreatedAt(createdAt);
-        notificationRepository.save(notification);
+        notificationMapper.upsertNotification(notification);
         return true;
     }
 
     public Map<String, Object> listMyMessages(Boolean confirmed, NotificationType type, Integer pageNum, Integer pageSize) {
         UserEntity currentUser = authService.currentUser();
-        return toPage(notificationRepository.findAll().stream()
-                .filter(notification -> currentUser.getUserId().equals(notification.getUserId()))
-                .filter(notification -> confirmed == null || notification.isRead() == confirmed)
-                .filter(notification -> type == null || notification.getType() == type)
+        return toPage(notificationMapper.selectAll().stream()
+                .filter(n -> currentUser.getUserId().equals(n.getUserId()))
+                .filter(n -> confirmed == null || n.isRead() == confirmed)
+                .filter(n -> type == null || n.getType() == type)
                 .sorted(Comparator.comparing(NotificationEntity::getNotificationId).reversed())
                 .map(this::toView)
                 .toList(), pageNum, pageSize);
@@ -71,10 +72,10 @@ public class NotificationService {
         if (currentUser.getRoleCode() == RoleCode.STUDENT) {
             throw new ApiException(403, "无权限访问");
         }
-        return toPage(notificationRepository.findAll().stream()
-                .filter(notification -> userId == null || userId.equals(notification.getUserId()))
-                .filter(notification -> type == null || notification.getType() == type)
-                .filter(notification -> confirmed == null || notification.isRead() == confirmed)
+        return toPage(notificationMapper.selectAll().stream()
+                .filter(n -> userId == null || userId.equals(n.getUserId()))
+                .filter(n -> type == null || n.getType() == type)
+                .filter(n -> confirmed == null || n.isRead() == confirmed)
                 .sorted(Comparator.comparing(NotificationEntity::getNotificationId).reversed())
                 .map(this::toView)
                 .toList(), pageNum, pageSize);
@@ -82,9 +83,9 @@ public class NotificationService {
 
     public Map<String, Object> unconfirmedSummary() {
         UserEntity currentUser = authService.currentUser();
-        List<NotificationEntity> notifications = notificationRepository.findAll().stream()
-                .filter(notification -> currentUser.getUserId().equals(notification.getUserId()))
-                .filter(notification -> !notification.isRead())
+        List<NotificationEntity> notifications = notificationMapper.selectAll().stream()
+                .filter(n -> currentUser.getUserId().equals(n.getUserId()))
+                .filter(n -> !n.isRead())
                 .toList();
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -98,19 +99,19 @@ public class NotificationService {
 
     public Map<String, Object> summary() {
         UserEntity currentUser = authService.currentUser();
-        List<NotificationEntity> notifications = notificationRepository.findAll().stream()
-                .filter(notification -> currentUser.getUserId().equals(notification.getUserId()))
+        List<NotificationEntity> notifications = notificationMapper.selectAll().stream()
+                .filter(n -> currentUser.getUserId().equals(n.getUserId()))
                 .sorted(Comparator.comparing(NotificationEntity::getNotificationId).reversed())
                 .toList();
 
         Map<String, Integer> unreadByType = new LinkedHashMap<>();
         int unreadTotal = 0;
-        for (NotificationType type : NotificationType.values()) {
-            int count = (int) notifications.stream()
-                    .filter(notification -> !notification.isRead() && notification.getType() == type)
+        for (NotificationType t : NotificationType.values()) {
+            int c = (int) notifications.stream()
+                    .filter(n -> !n.isRead() && n.getType() == t)
                     .count();
-            unreadByType.put(type.name(), count);
-            unreadTotal += count;
+            unreadByType.put(t.name(), c);
+            unreadTotal += c;
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -122,19 +123,21 @@ public class NotificationService {
 
     public Map<String, Object> confirmMessage(Long notificationId) {
         UserEntity currentUser = authService.currentUser();
-        NotificationEntity notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new ApiException(404, "消息不存在"));
+        NotificationEntity notification = notificationMapper.selectById(notificationId);
+        if (notification == null) {
+            throw new ApiException(404, "消息不存在");
+        }
         if (!currentUser.getUserId().equals(notification.getUserId())) {
             throw new ApiException(403, "仅可处理本人的消息");
         }
         notification.setRead(true);
         notification.setReadAt(LocalDateTime.now());
-        notificationRepository.save(notification);
+        notificationMapper.upsertNotification(notification);
         return toView(notification);
     }
 
     private int countByType(List<NotificationEntity> notifications, NotificationType type) {
-        return (int) notifications.stream().filter(notification -> notification.getType() == type).count();
+        return (int) notifications.stream().filter(n -> n.getType() == type).count();
     }
 
     private Map<String, Object> toPage(List<Map<String, Object>> list, Integer pageNum, Integer pageSize) {
@@ -150,20 +153,20 @@ public class NotificationService {
         );
     }
 
-    private Map<String, Object> toView(NotificationEntity notification) {
+    private Map<String, Object> toView(NotificationEntity n) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("messageId", notification.getNotificationId());
-        result.put("notificationId", notification.getNotificationId());
-        result.put("type", notification.getType());
-        result.put("title", notification.getTitle());
-        result.put("content", notification.getContent());
-        result.put("relatedBizType", notification.getRelatedBizType());
-        result.put("relatedBizId", notification.getRelatedBizId());
-        result.put("confirmStatus", notification.isRead() ? "CONFIRMED" : "UNCONFIRMED");
-        result.put("read", notification.isRead());
-        result.put("createdAt", formatDateTime(notification.getCreatedAt()));
-        result.put("confirmedAt", formatDateTime(notification.getReadAt()));
-        result.put("readAt", formatDateTime(notification.getReadAt()));
+        result.put("messageId", n.getNotificationId());
+        result.put("notificationId", n.getNotificationId());
+        result.put("type", n.getType());
+        result.put("title", n.getTitle());
+        result.put("content", n.getContent());
+        result.put("relatedBizType", n.getRelatedBizType());
+        result.put("relatedBizId", n.getRelatedBizId());
+        result.put("confirmStatus", n.isRead() ? "CONFIRMED" : "UNCONFIRMED");
+        result.put("read", n.isRead());
+        result.put("createdAt", formatDateTime(n.getCreatedAt()));
+        result.put("confirmedAt", formatDateTime(n.getReadAt()));
+        result.put("readAt", formatDateTime(n.getReadAt()));
         return result;
     }
 

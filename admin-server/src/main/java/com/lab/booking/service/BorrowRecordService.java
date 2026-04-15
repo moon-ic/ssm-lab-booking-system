@@ -2,6 +2,9 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.dto.BorrowRecordDtos;
+import com.lab.booking.mapper.BorrowRecordMapper;
+import com.lab.booking.mapper.DeviceMapper;
+import com.lab.booking.mapper.ReservationMapper;
 import com.lab.booking.model.BorrowRecordEntity;
 import com.lab.booking.model.BorrowStatus;
 import com.lab.booking.model.DeviceEntity;
@@ -11,9 +14,6 @@ import com.lab.booking.model.ReservationStatus;
 import com.lab.booking.model.RoleCode;
 import com.lab.booking.model.UserEntity;
 import com.lab.booking.repository.AuthRepository;
-import com.lab.booking.repository.BorrowRecordRepository;
-import com.lab.booking.repository.DeviceRepository;
-import com.lab.booking.repository.ReservationRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -32,22 +32,22 @@ public class BorrowRecordService {
     private static final DateTimeFormatter SECOND_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final DateTimeFormatter MINUTE_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    private final BorrowRecordRepository borrowRecordRepository;
-    private final ReservationRepository reservationRepository;
-    private final DeviceRepository deviceRepository;
+    private final BorrowRecordMapper borrowRecordMapper;
+    private final ReservationMapper reservationMapper;
+    private final DeviceMapper deviceMapper;
     private final AuthRepository authRepository;
     private final AuthService authService;
 
     public BorrowRecordService(
-            BorrowRecordRepository borrowRecordRepository,
-            ReservationRepository reservationRepository,
-            DeviceRepository deviceRepository,
+            BorrowRecordMapper borrowRecordMapper,
+            ReservationMapper reservationMapper,
+            DeviceMapper deviceMapper,
             AuthRepository authRepository,
             AuthService authService
     ) {
-        this.borrowRecordRepository = borrowRecordRepository;
-        this.reservationRepository = reservationRepository;
-        this.deviceRepository = deviceRepository;
+        this.borrowRecordMapper = borrowRecordMapper;
+        this.reservationMapper = reservationMapper;
+        this.deviceMapper = deviceMapper;
         this.authRepository = authRepository;
         this.authService = authService;
     }
@@ -70,7 +70,7 @@ public class BorrowRecordService {
             Integer pageNum,
             Integer pageSize
     ) {
-        List<Map<String, Object>> filtered = borrowRecordRepository.findAll().stream()
+        List<Map<String, Object>> filtered = borrowRecordMapper.selectAll().stream()
                 .filter(record -> visibleTo(currentUser, record))
                 .filter(record -> status == null || record.getStatus() == status)
                 .filter(record -> userId == null || Objects.equals(record.getUserId(), userId))
@@ -109,11 +109,11 @@ public class BorrowRecordService {
 
         record.setPickupTime(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
         record.setStatus(BorrowStatus.BORROWING);
-        borrowRecordRepository.save(record);
+        borrowRecordMapper.upsertBorrowRecord(record);
 
         DeviceEntity device = getExistingDevice(record.getDeviceId());
         device.setStatus(DeviceStatus.BORROWED);
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
 
         return toRecordView(record);
     }
@@ -137,11 +137,11 @@ public class BorrowRecordService {
         } else {
             record.setStatus(BorrowStatus.RETURNED);
         }
-        borrowRecordRepository.save(record);
+        borrowRecordMapper.upsertBorrowRecord(record);
 
         DeviceEntity device = getExistingDevice(record.getDeviceId());
         device.setStatus("NORMAL".equals(actualCondition) ? DeviceStatus.AVAILABLE : DeviceStatus.DAMAGED);
-        deviceRepository.save(device);
+        deviceMapper.upsertDevice(device);
 
         return toRecordView(record);
     }
@@ -153,7 +153,7 @@ public class BorrowRecordService {
             throw new ApiException(409, "当前借用记录状态不可标记逾期");
         }
         record.setStatus(BorrowStatus.OVERDUE);
-        borrowRecordRepository.save(record);
+        borrowRecordMapper.upsertBorrowRecord(record);
     }
 
     public List<Map<String, Object>> listReminders(String type) {
@@ -164,7 +164,7 @@ public class BorrowRecordService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        return borrowRecordRepository.findAll().stream()
+        return borrowRecordMapper.selectAll().stream()
                 .filter(record -> matchesReminderType(actualType, record, now))
                 .sorted(Comparator.comparing(BorrowRecordEntity::getRecordId))
                 .map(record -> {
@@ -176,25 +176,25 @@ public class BorrowRecordService {
     }
 
     public void createPendingRecordFromReservation(ReservationEntity reservation) {
-        boolean exists = borrowRecordRepository.findByReservationId(reservation.getReservationId()).isPresent();
-        if (exists) {
+        BorrowRecordEntity existing = borrowRecordMapper.selectByReservationId(reservation.getReservationId());
+        if (existing != null) {
             return;
         }
 
         BorrowRecordEntity record = new BorrowRecordEntity();
-        record.setRecordId(borrowRecordRepository.nextRecordId());
+        Long nextId = borrowRecordMapper.selectNextRecordId();
+        record.setRecordId(nextId == null ? 3001L : nextId);
         record.setReservationId(reservation.getReservationId());
         record.setUserId(reservation.getApplicantId());
         record.setDeviceId(reservation.getDeviceId());
         record.setStatus(BorrowStatus.PICKUP_PENDING);
         record.setExpectedReturnTime(reservation.getEndTime());
-        borrowRecordRepository.save(record);
+        borrowRecordMapper.upsertBorrowRecord(record);
     }
 
     public boolean canExpireReservation(Long reservationId) {
-        return borrowRecordRepository.findByReservationId(reservationId)
-                .map(record -> record.getStatus() == BorrowStatus.PICKUP_PENDING)
-                .orElse(false);
+        BorrowRecordEntity record = borrowRecordMapper.selectByReservationId(reservationId);
+        return record != null && record.getStatus() == BorrowStatus.PICKUP_PENDING;
     }
 
     private boolean matchesReminderType(String type, BorrowRecordEntity record, LocalDateTime now) {
@@ -223,22 +223,31 @@ public class BorrowRecordService {
     }
 
     private BorrowRecordEntity getExistingRecord(Long recordId) {
-        return borrowRecordRepository.findById(recordId)
-                .orElseThrow(() -> new ApiException(404, "借用记录不存在"));
+        BorrowRecordEntity record = borrowRecordMapper.selectById(recordId);
+        if (record == null) {
+            throw new ApiException(404, "借用记录不存在");
+        }
+        return record;
     }
 
     private ReservationEntity getExistingReservation(Long reservationId) {
-        return reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ApiException(404, "预约不存在"));
+        ReservationEntity reservation = reservationMapper.selectById(reservationId);
+        if (reservation == null) {
+            throw new ApiException(404, "预约不存在");
+        }
+        return reservation;
     }
 
     private DeviceEntity getExistingDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId)
-                .orElseThrow(() -> new ApiException(404, "设备不存在"));
+        DeviceEntity device = deviceMapper.selectById(deviceId);
+        if (device == null) {
+            throw new ApiException(404, "设备不存在");
+        }
+        return device;
     }
 
     private DeviceEntity findDevice(Long deviceId) {
-        return deviceRepository.findById(deviceId).orElse(null);
+        return deviceMapper.selectById(deviceId);
     }
 
     private UserEntity getExistingUser(Long userId) {
