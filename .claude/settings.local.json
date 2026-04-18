@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mvn clean:*)"
+      "Bash(mvn clean:*)",
+      "WebSearch",
+      "WebFetch(domain:www.mdpi.com)"
     ]
   }
 }
