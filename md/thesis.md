@@ -216,7 +216,47 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 | 教师       | TEACHER     | 负责学生预约初审、学生账号管理及个人业务操作                   |
 | 学生       | STUDENT     | 负责设备查询、预约申请、消息查看及个人借用信息管理             |
 
-在角色层级上，超级管理员拥有系统最高管理权限；管理员主要负责实验室设备及业务流程管理；教师主要面向所管理学生开展审核和管理；学生则作为设备预约与使用的直接参与者。该角色设计能够满足实验室管理中多层级协同工作的实际需求。
+在角色层级上，超级管理员拥有系统最高管理权限；管理员主要负责实验室设备及业务流程管理；教师主要面向所管理学生开展审核和管理；学生则作为设备预约与使用的直接参与者。该角色设计能够满足实验室管理中多层级协同工作的实际需求。系统四类角色与各功能用例的对应关系如图3-1所示。
+
+**图3-1 系统用例图**
+
+```mermaid
+graph LR
+    subgraph ACTORS["参与者"]
+        SA["超级管理员"]
+        AD["管理员"]
+        TC["教师"]
+        ST["学生"]
+    end
+
+    subgraph ADMIN_UC["系统管理"]
+        UC1["用户账号管理"]
+        UC2["角色权限配置"]
+        UC3["菜单配置"]
+    end
+
+    subgraph DEVICE_UC["设备管理"]
+        UC4["设备信息维护"]
+        UC5["设备查询浏览"]
+    end
+
+    subgraph BIZ_UC["业务流程"]
+        UC6["提交预约申请"]
+        UC7["审批预约"]
+        UC8["借用归还处理"]
+        UC9["维修申请与处理"]
+    end
+
+    subgraph DATA_UC["数据与通知"]
+        UC10["消息通知查看"]
+        UC11["统计分析"]
+    end
+
+    SA --> UC1 & UC2 & UC3 & UC5 & UC10 & UC11
+    AD --> UC4 & UC5 & UC7 & UC8 & UC9 & UC10 & UC11
+    TC --> UC5 & UC6 & UC7 & UC10
+    ST --> UC5 & UC6 & UC9 & UC10
+```
 
 ### 3.2 功能需求分析
 
@@ -320,7 +360,44 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 
 从后端内部结构来看，系统遵循典型的三层分层设计：控制层（Controller）负责接收HTTP请求、完成参数校验并组织响应数据；业务层（Service）负责实现系统核心业务逻辑，包括预约审批流转、借用归还处理、权限校验和设备状态联动等；数据访问层（Mapper）负责通过MyBatis与MySQL数据库进行交互，完成业务数据的读写操作。三层之间通过接口定义进行依赖，控制层依赖业务层接口，业务层依赖数据访问层接口，各层内部实现细节对上层透明，有效降低了模块间的耦合度，便于后续功能扩展与单元测试。
 
-在安全控制层面，系统通过Spring Security的过滤链机制统一处理认证与授权逻辑，在每次请求到达控制层之前完成令牌解析与身份提取；在数据存储层面，系统以MySQL作为核心持久化数据库，并在架构上预留了Redis扩展能力，以满足后续会话共享和缓存加速的需要。
+在安全控制层面，系统通过Spring Security的过滤链机制统一处理认证与授权逻辑，在每次请求到达控制层之前完成令牌解析与身份提取；在数据存储层面，系统以MySQL作为核心持久化数据库，并在架构上预留了Redis扩展能力，以满足后续会话共享和缓存加速的需要。系统整体架构如图4-1所示。
+
+**图4-1 系统整体架构图**
+
+```mermaid
+graph TB
+    subgraph CLIENT["客户端层"]
+        Browser["浏览器"]
+    end
+
+    subgraph FRONTEND["前端层 admin-ui · Vue 3 + Vite"]
+        direction LR
+        FE1["Vue Router\n路由守卫"]
+        FE2["Views\n视图组件"]
+        FE3["Pinia\n状态管理"]
+        FE4["Element Plus\nUI组件库"]
+        FE5["Axios\nHTTP客户端"]
+    end
+
+    subgraph BACKEND["后端层 admin-server · Spring Boot 3"]
+        direction TB
+        SEC["Spring Security 安全过滤链\n令牌解析 / RBAC权限校验"]
+        CTRL["Controller 控制层\n接收请求 / 参数校验 / 组装响应"]
+        SVC["Service 业务层\n核心业务逻辑 / 状态流转"]
+        MAPPER["Mapper 数据访问层\nMyBatis / SQL映射"]
+        SEC --> CTRL --> SVC --> MAPPER
+    end
+
+    subgraph DATA["数据层"]
+        DB[("MySQL 8\nlab_booking\n12张业务表")]
+        CACHE[("Redis\n可选缓存\n令牌存储扩展")]
+    end
+
+    Browser --> FRONTEND
+    FE5 -->|"HTTP / JSON  REST API"| BACKEND
+    MAPPER --> DB
+    MAPPER -.->|"APP_REDIS_ENABLED=true"| CACHE
+```
 
 ## 4.2 功能模块设计
 
@@ -330,7 +407,72 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 
 设备管理模块主要用于维护实验室设备的基础信息，包括设备名称、编号、类别、状态、位置和描述等内容，同时支持设备信息查询、编辑和状态调整。预约管理模块是系统的核心模块之一，主要负责设备预约申请、审批流转、预约取消和预约失效处理等业务。借用归还管理模块在预约审批通过后记录设备借用情况，并负责归还登记和逾期管理。维修管理模块用于处理设备损坏后的报修、维修状态更新及维修结果维护。消息通知模块用于向用户推送预约失效、归还提醒、逾期通知和维修结果等业务消息。统计分析模块则通过对设备、预约、借用和维修等数据进行汇总分析，为管理人员提供数据支持。
 
-各模块之间并非相互独立，而是存在密切的业务关联。例如，预约管理依赖设备管理模块提供设备状态信息，借用归还管理依赖预约审批结果生成借用记录，维修管理又与借还过程中的设备损坏情况相关联，消息通知模块则贯穿多个业务模块的关键节点。通过这种模块化设计，系统在保持结构清晰的同时，也能够较好地支撑完整的实验室设备管理业务流程。
+各模块之间并非相互独立，而是存在密切的业务关联。例如，预约管理依赖设备管理模块提供设备状态信息，借用归还管理依赖预约审批结果生成借用记录，维修管理又与借还过程中的设备损坏情况相关联，消息通知模块则贯穿多个业务模块的关键节点。通过这种模块化设计，系统在保持结构清晰的同时，也能够较好地支撑完整的实验室设备管理业务流程。系统功能模块划分如图4-2所示。
+
+**图4-2 系统功能模块图**
+
+```mermaid
+graph TD
+    ROOT["高校实验室设备预约管理系统"]
+
+    ROOT --> M1["认证模块\n登录认证 / 令牌管理 / 密码修改"]
+    ROOT --> M2["用户管理模块\n账号创建 / 启停 / 密码重置"]
+    ROOT --> M3["角色权限模块\nRBAC权限配置 / 菜单管理"]
+    ROOT --> M4["设备管理模块\n台账维护 / 图片上传 / 状态管理"]
+    ROOT --> M5["预约管理模块\n申请提交 / 分级审批 / 冲突检测 / 失效处理"]
+    ROOT --> M6["借用归还模块\n取用确认 / 归还登记 / 逾期管理"]
+    ROOT --> M7["维修管理模块\n报修申请 / 进度跟踪 / 结果通知"]
+    ROOT --> M8["消息通知模块\n幂等推送 / 多场景通知"]
+    ROOT --> M9["统计分析模块\n数据概览 / 多维度排行榜"]
+```
+
+各角色在核心业务流程中的协作关系如图4-3泳道图所示，完整描述了设备从预约申请到归还维修的全生命周期流转过程。
+
+**图4-3 核心业务流程泳道图**
+
+```mermaid
+flowchart LR
+    subgraph ST_LANE["学生"]
+        direction TB
+        ST1([提交预约申请]) --> ST2([等待审批结果])
+        ST2 --> ST3([确认取用设备])
+        ST3 --> ST4([归还设备])
+        ST4 --> ST5([提交维修申请])
+    end
+
+    subgraph TC_LANE["教师"]
+        direction TB
+        TC1([初审预约申请])
+        TC2([驳回或通过])
+    end
+
+    subgraph AD_LANE["管理员"]
+        direction TB
+        AD1([终审预约]) --> AD2([自动生成借用记录])
+        AD2 --> AD3([确认学生取用])
+        AD3 --> AD4([登记设备归还])
+        AD4 --> AD5([处理维修申请])
+    end
+
+    subgraph SYS_LANE["系统自动处理"]
+        direction TB
+        SYS1([时间冲突检测])
+        SYS2([预约超期失效])
+        SYS3([借用逾期标记])
+        SYS4([消息通知推送])
+    end
+
+    ST1 --> SYS1 --> TC1 --> TC2
+    TC2 -->|"通过"| AD1
+    TC2 -->|"驳回"| ST2
+    AD1 -->|"驳回"| ST2
+    AD3 -.->|"通知取用"| ST3
+    ST4 --> AD4
+    ST5 --> AD5
+    SYS2 -.-> ST2
+    SYS3 -.-> ST4
+    SYS4 -.-> ST2 & ST4 & ST5
+```
 
 ## 4.3 界面设计
 
@@ -404,7 +546,83 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 
 **消息通知（Notification）**：代表系统向用户推送的业务提醒，通过`type`字段区分不同业务场景下的通知类型，并通过`related_biz_type`和`related_biz_id`字段关联触发通知的具体业务记录。消息通知与用户实体存在多对一关系（一个用户可有多条通知）。
 
-从整体数据关系来看，用户实体（User）与预约、借用、维修和通知四类业务实体均存在一对多关联；设备实体（Device）分别与预约、借用和维修实体形成一对多关联；预约与借用实体之间存在严格的一对一约束关系，共同构成系统核心业务流的数据骨架。通过主键约束、唯一约束、外键关联及状态字段枚举等数据库级别的完整性保障机制，系统能够支持设备从预约申请、借用使用到归还维修的完整生命周期数据管理，为业务流程的可靠执行提供坚实的数据模型基础。
+从整体数据关系来看，用户实体（User）与预约、借用、维修和通知四类业务实体均存在一对多关联；设备实体（Device）分别与预约、借用和维修实体形成一对多关联；预约与借用实体之间存在严格的一对一约束关系，共同构成系统核心业务流的数据骨架。通过主键约束、唯一约束、外键关联及状态字段枚举等数据库级别的完整性保障机制，系统能够支持设备从预约申请、借用使用到归还维修的完整生命周期数据管理，为业务流程的可靠执行提供坚实的数据模型基础。系统核心数据模型的E-R图如图4-4所示。
+
+**图4-4 数据库E-R图**
+
+```mermaid
+erDiagram
+    sys_user ||--o{ lab_reservation : "发起预约"
+    sys_user ||--o{ lab_borrow_record : "产生借用"
+    sys_user ||--o{ lab_repair : "提交报修"
+    sys_user ||--o{ lab_notification : "接收通知"
+    sys_user }o--o| sys_user : "上下级管理"
+
+    lab_device ||--o{ lab_reservation : "被预约"
+    lab_device ||--o{ lab_borrow_record : "被借用"
+    lab_device ||--o{ lab_repair : "被报修"
+
+    lab_reservation ||--|| lab_borrow_record : "审批通过后生成"
+
+    sys_role }o--o{ sys_permission : "拥有权限"
+    sys_role }o--o{ sys_menu : "配置菜单"
+
+    sys_user {
+        bigint user_id PK
+        string login_id UK
+        string role_code
+        string status
+        bigint manager_id FK
+    }
+    lab_device {
+        bigint device_id PK
+        string device_code UK
+        string status
+        string category
+        string location
+    }
+    lab_reservation {
+        bigint reservation_id PK
+        bigint applicant_id FK
+        bigint device_id FK
+        datetime start_time
+        datetime end_time
+        string status
+    }
+    lab_borrow_record {
+        bigint record_id PK
+        bigint reservation_id FK
+        bigint user_id FK
+        bigint device_id FK
+        string status
+        datetime expected_return_time
+    }
+    lab_repair {
+        bigint repair_id PK
+        bigint device_id FK
+        bigint applicant_id FK
+        string status
+    }
+    lab_notification {
+        bigint notification_id PK
+        bigint user_id FK
+        string type
+        tinyint is_read
+    }
+    sys_role {
+        bigint role_id PK
+        string role_code UK
+    }
+    sys_permission {
+        bigint permission_id PK
+        string permission_code UK
+    }
+    sys_menu {
+        bigint menu_id PK
+        string menu_name
+        string path
+    }
+```
 
 ### 4.4.2 数据库表设计
 
@@ -813,7 +1031,26 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 
 `AuthService`中的`login`方法负责完整的登录校验流程：首先通过`AuthRepository`根据`loginId`或`account`查询用户信息，若账号不存在则直接返回401错误；其次比对密码明文，密码错误同样返回401；再次检查账户的`status`字段，若为`DISABLED`则返回403拒绝访问。三项校验全部通过后，调用`AuthRepository.createToken`生成唯一令牌字符串，将令牌与用户ID的映射关系存入`InMemoryTokenStore`（或在Redis启用时切换至`RedisTokenStore`），最终将令牌、过期时间、首次登录标记及用户基本信息组装为JSON返回给客户端。
 
-请求过滤依赖`AuthTokenFilter`，该类继承自Spring的`OncePerRequestFilter`，在每次请求到达业务控制器之前执行一次身份提取逻辑。过滤器从请求头`Authorization`字段中截取`Bearer`后的令牌字符串，通过`AuthRepository.findByToken`查找关联用户，若命中则将用户对象封装为`UsernamePasswordAuthenticationToken`并写入`SecurityContextHolder`，使后续所有业务层均可通过`authService.currentUser()`直接获取当前登录用户。这种基于令牌的无状态认证模式可有效避免服务端维护会话带来的状态同步问题，在Web应用的安全设计中具有广泛应用[18]。
+请求过滤依赖`AuthTokenFilter`，该类继承自Spring的`OncePerRequestFilter`，在每次请求到达业务控制器之前执行一次身份提取逻辑。过滤器从请求头`Authorization`字段中截取`Bearer`后的令牌字符串，通过`AuthRepository.findByToken`查找关联用户，若命中则将用户对象封装为`UsernamePasswordAuthenticationToken`并写入`SecurityContextHolder`，使后续所有业务层均可通过`authService.currentUser()`直接获取当前登录用户。这种基于令牌的无状态认证模式可有效避免服务端维护会话带来的状态同步问题，在Web应用的安全设计中具有广泛应用[18]。认证模块完整的登录流程如图5-1所示。
+
+**图5-1 认证模块登录流程图**
+
+```mermaid
+flowchart TD
+    A([用户提交登录请求]) --> B{账号是否存在?}
+    B -- 不存在 --> ERR1["返回401: 账号不存在"]
+    B -- 存在 --> C{密码是否正确?}
+    C -- 错误 --> ERR2["返回401: 密码错误"]
+    C -- 正确 --> D{账户状态}
+    D -- DISABLED --> ERR3["返回403: 账户已禁用"]
+    D -- ENABLED --> E["生成访问令牌\n写入Token存储"]
+    E --> F["返回令牌 + 用户信息\n含 firstLoginRequired 标记"]
+    F --> G{firstLoginRequired?}
+    G -- 是 --> H["前端限制访问\n仅开放密码修改页面"]
+    G -- 否 --> I["跳转至系统首页"]
+    H --> J([用户完成密码修改])
+    J --> I
+```
 
 首次登录强制改密机制也在`AuthTokenFilter`中实现。当安全上下文中的用户`firstLoginRequired`字段为`true`，且请求路径不属于白名单（`/api/auth/me`和`/api/auth/password`）时，过滤器直接截断请求，返回`code:403`的业务错误响应，阻止用户访问其他功能接口。`changePassword`方法在密码修改成功后会将`firstLoginRequired`置为`false`并持久化，使该限制自动解除。
 
@@ -853,7 +1090,35 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 
 设备图片上传由独立的`importDevice`方法（通过`DeviceImportController`暴露）处理，接收`MultipartFile`类型的图片文件，将其保存至配置项`app.storage.upload-dir`指定的本地目录下，以`deviceId`作为文件名，并将相对访问路径写入`lab_device`表的`image_url`字段。静态资源访问通过`StaticResourceConfig`将`/uploads/**`路径映射至本地目录，前端可直接通过URL访问设备图片。
 
-设备状态联动在各业务模块中实现：`ReservationService`在终审通过后将设备状态更新为`RESERVED`；`BorrowRecordService`在确认取用时更新为`BORROWED`；归还且完好时恢复为`AVAILABLE`；归还时损坏则更新为`DAMAGED`；`RepairService`在维修完成后恢复为`AVAILABLE`。通过这种分布式状态联动，设备表始终准确反映设备当前状态。
+设备状态联动在各业务模块中实现：`ReservationService`在终审通过后将设备状态更新为`RESERVED`；`BorrowRecordService`在确认取用时更新为`BORROWED`；归还且完好时恢复为`AVAILABLE`；归还时损坏则更新为`DAMAGED`；`RepairService`在维修完成后恢复为`AVAILABLE`。通过这种分布式状态联动，设备表始终准确反映设备当前状态。设备在各业务操作驱动下的完整状态流转如图5-2所示。
+
+**图5-2 设备状态流转图**
+
+```mermaid
+stateDiagram-v2
+    [*] --> AVAILABLE : 设备录入
+
+    AVAILABLE --> RESERVED : 预约终审通过
+    RESERVED --> AVAILABLE : 预约取消或自动失效
+    RESERVED --> BORROWED : 管理员确认取用
+
+    BORROWED --> AVAILABLE : 归还且设备完好
+    BORROWED --> DAMAGED : 归还时设备损坏
+
+    DAMAGED --> REPAIRING : 提交维修申请
+    REPAIRING --> AVAILABLE : 维修完成
+    REPAIRING --> DAMAGED : 无法修复
+
+    AVAILABLE --> DISABLED : 管理员停用
+    DISABLED --> AVAILABLE : 管理员重新启用
+
+    AVAILABLE : 可用 AVAILABLE
+    RESERVED : 已预约 RESERVED
+    BORROWED : 借出中 BORROWED
+    DAMAGED : 损坏 DAMAGED
+    REPAIRING : 维修中 REPAIRING
+    DISABLED : 停用 DISABLED
+```
 
 ### 5.4.2 前端设计与实现
 
@@ -871,7 +1136,29 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 
 审批流转由`approveReservation`方法处理。方法接收`action`字段（`APPROVE`或`REJECT`）并通过`switch`分支分别执行审批逻辑。驳回分支将预约状态设为`REJECTED`并记录审核意见。通过分支根据预约当前状态判断审批阶段：若当前状态为`PENDING`（教师初审）则更新为`APPROVED`；若当前状态为`APPROVED`（管理员终审）则更新为`PICKUP_PENDING`，同时自动创建`BorrowRecordEntity`写入`lab_borrow_record`表，并将设备状态更新为`RESERVED`。教师角色在审批时还额外校验预约申请人是否属于自己管辖的学生。
 
-预约自动失效通过`SystemTaskScheduler`实现，其中`expireReservationsTask`方法以`@Scheduled(cron = "0 0/30 * * * ?")`注解每30分钟执行一次，调用`SystemTaskService.expirePickupPendingReservations`扫描所有`PICKUP_PENDING`状态且创建时间超过24小时的预约记录，将其状态更新为`EXPIRED`，恢复设备`AVAILABLE`状态，并通过`NotificationService`向申请人发送`RESERVATION_EXPIRED`类型通知。
+预约自动失效通过`SystemTaskScheduler`实现，其中`expireReservationsTask`方法以`@Scheduled(cron = "0 0/30 * * * ?")`注解每30分钟执行一次，调用`SystemTaskService.expirePickupPendingReservations`扫描所有`PICKUP_PENDING`状态且创建时间超过24小时的预约记录，将其状态更新为`EXPIRED`，恢复设备`AVAILABLE`状态，并通过`NotificationService`向申请人发送`RESERVATION_EXPIRED`类型通知。预约管理模块完整业务流程如图5-3所示。
+
+**图5-3 预约管理流程图**
+
+```mermaid
+flowchart TD
+    START([学生或教师提交预约申请]) --> CHK1{设备状态\n是否 AVAILABLE?}
+    CHK1 -- 否 --> ERR1["拒绝: 设备当前不可预约"]
+    CHK1 -- 是 --> CHK2{预约时间段\n是否与已有记录冲突?}
+    CHK2 -- 冲突 --> ERR2["返回409: 预约时间冲突"]
+    CHK2 -- 无冲突 --> ROLE{申请人角色}
+    ROLE -- 学生 --> P1["创建预约记录\n状态: PENDING"]
+    ROLE -- 教师 --> P2["创建预约记录\n状态: APPROVED"]
+    P1 --> TC_REVIEW["教师初审"]
+    TC_REVIEW -- 驳回 --> REJ["预约状态 → REJECTED\n消息通知申请人"]
+    TC_REVIEW -- 通过 --> P2
+    P2 --> AD_REVIEW["管理员终审"]
+    AD_REVIEW -- 驳回 --> REJ
+    AD_REVIEW -- 通过 --> DONE["预约状态 → PICKUP_PENDING\n自动生成借用记录\n设备状态 → RESERVED"]
+    DONE --> TIMER{超过24小时\n仍未取用?}
+    TIMER -- 是 --> EXPIRE["定时任务: 预约失效\n设备恢复 AVAILABLE\n推送失效通知"]
+    TIMER -- 否 --> BORROW["进入借用归还流程"]
+```
 
 ### 5.5.2 前端设计与实现
 
@@ -893,7 +1180,27 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 
 归还操作由`returnDevice`方法处理，接收`deviceCondition`归还状况字段。方法将借用记录`status`更新为`RETURNED`，记录`returnTime`，并根据`deviceCondition`的值判断设备状态：若值为`DAMAGED`，则将设备状态更新为`DAMAGED`；其余情况均恢复为`AVAILABLE`。损坏归还时，系统还自动调用`RepairService.createRepair`创建一条初始状态为`PENDING`的维修申请记录，实现借还流程与维修流程的自动衔接。
 
-逾期处理由`SystemTaskScheduler`中的`overdueBorrowRecordsTask`方法承担，同样以每30分钟的频率执行，调用`SystemTaskService.markOverdueBorrowRecords`扫描所有`BORROWING`状态且`expectedReturnTime`已过期的借用记录，将其`status`更新为`OVERDUE`，并通过`NotificationService`向借用人发送`BORROW_OVERDUE`类型通知。每天上午8时，`reminderSummaryTask`额外执行一次，对即将到期的借用记录生成`ABOUT_TO_EXPIRE_REMINDER`提醒通知。
+逾期处理由`SystemTaskScheduler`中的`overdueBorrowRecordsTask`方法承担，同样以每30分钟的频率执行，调用`SystemTaskService.markOverdueBorrowRecords`扫描所有`BORROWING`状态且`expectedReturnTime`已过期的借用记录，将其`status`更新为`OVERDUE`，并通过`NotificationService`向借用人发送`BORROW_OVERDUE`类型通知。每天上午8时，`reminderSummaryTask`额外执行一次，对即将到期的借用记录生成`ABOUT_TO_EXPIRE_REMINDER`提醒通知。借用归还模块完整流程如图5-4所示。
+
+**图5-4 借用归还流程图**
+
+```mermaid
+flowchart TD
+    START(["预约终审通过\n系统自动生成借用记录"]) --> S1["借用状态: PICKUP_PENDING\n设备状态: RESERVED"]
+    S1 --> TIMER1{超过24小时\n未取用?}
+    TIMER1 -- 是 --> EXPIRE["预约失效\n设备恢复 AVAILABLE"]
+    TIMER1 -- 否 --> AD_CONFIRM["管理员确认取用"]
+    AD_CONFIRM --> S2["借用状态: BORROWING\n设备状态: BORROWED\n记录实际取用时间"]
+    S2 --> CHK_TIME{归还时间节点}
+    CHK_TIME -- "临近到期(未逾期)" --> REM["定时任务\n推送到期提醒通知"]
+    CHK_TIME -- "已超过归还时间" --> OVR["定时任务标记逾期\n状态: OVERDUE\n推送逾期提醒"]
+    REM --> RET
+    OVR --> RET
+    CHK_TIME -- 正常归还 --> RET["管理员登记归还"]
+    RET --> COND{设备归还状况}
+    COND -- 完好 --> DONE["借用状态: RETURNED\n设备状态 → AVAILABLE"]
+    COND -- 损坏 --> DMG["借用状态: RETURNED\n设备状态 → DAMAGED\n系统自动创建维修申请"]
+```
 
 ### 5.6.2 前端设计与实现
 
@@ -911,7 +1218,20 @@ Redis是一种基于内存存储的高性能键值数据库，支持字符串、
 
 `updateRepairStatus`方法供管理员更新维修进度。方法接收目标状态（`PROCESSING`、`COMPLETED`或`UNREPAIRABLE`）和处理说明，根据不同目标状态执行对应的设备状态联动：若更新为`COMPLETED`则将设备状态恢复为`AVAILABLE`；若更新为`UNREPAIRABLE`则将设备状态保持为`DAMAGED`，表示设备无法正常使用。维修状态变更完成后，调用`NotificationService`向申请人发送维修结果通知，通知内容包含处理说明字段，使申请人可及时了解维修结论。
 
-`listRepairs`方法同样通过`visibleTo`进行可见范围控制：学生只能查看自己提交的维修申请，教师可查看其管辖学生提交的申请，管理员可查看全部记录，支持按`status`、`deviceId`和`applicantId`条件筛选分页。
+`listRepairs`方法同样通过`visibleTo`进行可见范围控制：学生只能查看自己提交的维修申请，教师可查看其管辖学生提交的申请，管理员可查看全部记录，支持按`status`、`deviceId`和`applicantId`条件筛选分页。维修管理模块完整流程如图5-5所示。
+
+**图5-5 维修管理流程图**
+
+```mermaid
+flowchart TD
+    START(["设备损坏 / 用户提交报修"]) --> CHK{"该设备是否已有\nPENDING 或 PROCESSING\n状态的维修记录?"}
+    CHK -- 是 --> DENY["拒绝提交\n提示: 该设备已有处理中的维修记录"]
+    CHK -- 否 --> CREATE["创建维修记录\n状态: PENDING\n设备状态 → REPAIRING"]
+    CREATE --> PROC["管理员受理维修\n状态: PROCESSING"]
+    PROC --> RESULT{维修结果}
+    RESULT -- "修复完成" --> DONE["维修状态: COMPLETED\n设备状态 → AVAILABLE\n推送维修完成通知"]
+    RESULT -- "无法修复" --> UNFIX["维修状态: UNREPAIRABLE\n设备状态保持 DAMAGED\n推送无法修复通知"]
+```
 
 ### 5.7.2 前端设计与实现
 
