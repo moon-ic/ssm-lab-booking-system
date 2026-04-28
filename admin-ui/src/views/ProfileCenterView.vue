@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { pickupBorrowRecord, returnBorrowRecord } from "@/api/borrow-records";
 import { confirmMyMessage, getProfile, listMyBorrowRecords, listMyMessages } from "@/api/profile";
 import type {
     BorrowRecordItem,
@@ -33,8 +34,20 @@ const messageQuery = reactive<MessageQuery>({
 
 const borrowTotal = ref(0);
 const messageTotal = ref(0);
+const returnDialogVisible = ref(false);
+const returnSubmitting = ref(false);
+const activeReturnRecord = ref<BorrowRecordItem | null>(null);
+
+const returnForm = reactive({
+    returnTime: "",
+    deviceCondition: "NORMAL"
+});
 
 const borrowStatusOptions: BorrowStatus[] = ["PICKUP_PENDING", "BORROWING", "RETURNED", "OVERDUE"];
+const deviceConditionOptions = [
+    { label: "正常", value: "NORMAL" },
+    { label: "损坏", value: "DAMAGED" }
+];
 const messageTypeOptions: NotificationType[] = [
     "FIRST_LOGIN_PASSWORD_CHANGE",
     "PASSWORD_RESET",
@@ -101,6 +114,24 @@ function confirmStatusLabel(status: "UNCONFIRMED" | "CONFIRMED") {
     return status === "CONFIRMED" ? "已确认" : "未确认";
 }
 
+function formatCurrentMinute() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+function canPickup(row: BorrowRecordItem) {
+    return row.status === "PICKUP_PENDING";
+}
+
+function canReturn(row: BorrowRecordItem) {
+    return row.status === "BORROWING" || row.status === "OVERDUE";
+}
+
 async function loadProfile() {
     profile.value = await getProfile();
 }
@@ -136,6 +167,54 @@ async function handleConfirmMessage(messageId: number) {
         await loadMessages();
     } catch (error) {
         ElMessage.error(error instanceof Error ? error.message : "确认消息失败");
+    }
+}
+
+async function handlePickup(row: BorrowRecordItem) {
+    try {
+        await ElMessageBox.confirm(`确认领取设备“${row.deviceName}”吗？`, "确认领取", {
+            confirmButtonText: "确认领取",
+            cancelButtonText: "取消",
+            type: "warning"
+        });
+        await pickupBorrowRecord(row.recordId, {});
+        ElMessage.success("设备已确认领取");
+        await loadBorrowRecords();
+    } catch (error) {
+        if (error === "cancel") {
+            return;
+        }
+        ElMessage.error(error instanceof Error ? error.message : "确认领取失败");
+    }
+}
+
+function openReturnDialog(row: BorrowRecordItem) {
+    activeReturnRecord.value = row;
+    returnForm.returnTime = formatCurrentMinute();
+    returnForm.deviceCondition = "NORMAL";
+    returnDialogVisible.value = true;
+}
+
+async function submitReturn() {
+    if (!activeReturnRecord.value) {
+        return;
+    }
+
+    returnSubmitting.value = true;
+
+    try {
+        await returnBorrowRecord(activeReturnRecord.value.recordId, {
+            returnTime: returnForm.returnTime,
+            deviceCondition: returnForm.deviceCondition
+        });
+        ElMessage.success("设备已归还");
+        returnDialogVisible.value = false;
+        activeReturnRecord.value = null;
+        await loadBorrowRecords();
+    } catch (error) {
+        ElMessage.error(error instanceof Error ? error.message : "归还设备失败");
+    } finally {
+        returnSubmitting.value = false;
     }
 }
 
@@ -240,6 +319,18 @@ onMounted(() => {
                         <ElTableColumn prop="expectedReturnTime" label="应还时间" min-width="160" />
                         <ElTableColumn prop="returnTime" label="归还时间" min-width="160" />
                         <ElTableColumn prop="deviceCondition" label="设备状况" min-width="140" />
+                        <ElTableColumn label="操作" min-width="180" fixed="right">
+                            <template #default="{ row }">
+                                <div class="action-row">
+                                    <ElButton v-if="canPickup(row)" link type="primary" @click="handlePickup(row)">
+                                        确认领取
+                                    </ElButton>
+                                    <ElButton v-if="canReturn(row)" link type="warning" @click="openReturnDialog(row)">
+                                        归还设备
+                                    </ElButton>
+                                </div>
+                            </template>
+                        </ElTableColumn>
                     </ElTable>
 
                     <div class="pagination-wrap">
@@ -319,6 +410,37 @@ onMounted(() => {
                 </ElTabPane>
             </ElTabs>
         </section>
+
+        <ElDialog v-model="returnDialogVisible" title="归还设备" width="460px">
+            <ElForm label-position="top">
+                <ElFormItem label="设备">
+                    <ElInput :model-value="activeReturnRecord?.deviceName || ''" disabled />
+                </ElFormItem>
+                <ElFormItem label="归还时间">
+                    <ElDatePicker
+                        v-model="returnForm.returnTime"
+                        type="datetime"
+                        value-format="YYYY-MM-DD HH:mm"
+                        format="YYYY-MM-DD HH:mm"
+                        style="width: 100%"
+                    />
+                </ElFormItem>
+                <ElFormItem label="设备状况">
+                    <ElSelect v-model="returnForm.deviceCondition" style="width: 100%">
+                        <ElOption
+                            v-for="option in deviceConditionOptions"
+                            :key="option.value"
+                            :label="option.label"
+                            :value="option.value"
+                        />
+                    </ElSelect>
+                </ElFormItem>
+            </ElForm>
+            <template #footer>
+                <ElButton @click="returnDialogVisible = false">取消</ElButton>
+                <ElButton type="primary" :loading="returnSubmitting" @click="submitReturn">确认归还</ElButton>
+            </template>
+        </ElDialog>
     </div>
 </template>
 
@@ -399,6 +521,12 @@ onMounted(() => {
     display: grid;
     gap: 12px;
     margin-bottom: 18px;
+}
+
+.action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .toolbar.two-col {

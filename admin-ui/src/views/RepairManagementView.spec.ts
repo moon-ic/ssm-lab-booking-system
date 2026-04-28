@@ -3,10 +3,11 @@ import { reactive } from 'vue'
 import RepairManagementView from '@/views/RepairManagementView.vue'
 import { elementPlusStubs } from '@/test/element-stubs'
 
-const { listRepairsMock, listDevicesMock, createRepairMock } = vi.hoisted(() => ({
+const { listRepairsMock, listDevicesMock, createRepairMock, listMyBorrowRecordsMock } = vi.hoisted(() => ({
   listRepairsMock: vi.fn(),
   listDevicesMock: vi.fn(),
-  createRepairMock: vi.fn()
+  createRepairMock: vi.fn(),
+  listMyBorrowRecordsMock: vi.fn()
 }))
 
 vi.mock('element-plus', () => ({
@@ -21,6 +22,10 @@ vi.mock('element-plus', () => ({
 
 vi.mock('@/api/devices', () => ({
   listDevices: listDevicesMock
+}))
+
+vi.mock('@/api/profile', () => ({
+  listMyBorrowRecords: listMyBorrowRecordsMock
 }))
 
 vi.mock('@/api/repairs', () => ({
@@ -83,6 +88,24 @@ describe('RepairManagementView', () => {
           deviceId: 1001,
           deviceName: 'Flow Camera',
           deviceCode: 'EQ-2026-1888'
+        },
+        {
+          deviceId: 1002,
+          deviceName: 'Idle Projector',
+          deviceCode: 'EQ-2026-1999'
+        }
+      ]
+    })
+    listMyBorrowRecordsMock.mockResolvedValue({
+      list: [
+        {
+          recordId: 9001,
+          reservationId: 7001,
+          userId: 4,
+          deviceId: 1001,
+          deviceName: 'Flow Camera',
+          status: 'BORROWING',
+          expectedReturnTime: '2026-04-13 18:00:00'
         }
       ]
     })
@@ -95,24 +118,25 @@ describe('RepairManagementView', () => {
     const wrapper = mountView()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Repair Module')
-    expect(wrapper.text()).toContain('Create Repair')
+    expect(wrapper.text()).toContain('维修模块')
+    expect(wrapper.text()).toContain('发起报修')
     expect(wrapper.find('.el-table-stub').text()).toContain('Lens issue')
 
-    await findButton(wrapper, 'Create Repair')?.trigger('click')
+    await findButton(wrapper, '发起报修')?.trigger('click')
 
     const select = wrapper.findAll('select')[1]
     const descriptionInput = wrapper.findAll('input').at(0)
 
     await select.setValue('1001')
     await descriptionInput?.setValue('Screen keeps flickering')
-    await findButton(wrapper, 'Submit')?.trigger('click')
+    await findButton(wrapper, '提交')?.trigger('click')
     await flushPromises()
 
     expect(createRepairMock).toHaveBeenCalledWith({
       description: 'Screen keeps flickering',
       deviceId: '1001'
     })
+    expect(listMyBorrowRecordsMock).toHaveBeenCalled()
     expect(listRepairsMock).toHaveBeenCalledTimes(2)
   })
 })

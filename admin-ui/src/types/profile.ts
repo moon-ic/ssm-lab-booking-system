@@ -14,10 +14,11 @@ export interface BorrowRecordItem {
   recordId: number
   reservationId: number
   userId: number
+  userName?: string
   deviceId: number
   deviceName: string
   status: BorrowStatus
-  pickupTime: string
+  pickupTime?: string
   expectedReturnTime: string
   returnTime?: string
   deviceCondition?: string

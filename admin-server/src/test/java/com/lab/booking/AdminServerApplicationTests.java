@@ -1083,6 +1083,7 @@ class AdminServerApplicationTests {
     void studentCanSubmitRepairAndTeacherCanSeeManagedRepairs() throws Exception {
         String studentToken = loginAndGetToken("20230001", "0000");
         String teacherToken = loginAndGetToken("T2026001", "0000");
+        pickupApprovedReservation(studentToken, teacherToken, "2026-04-03 09:00:00", "2026-04-03 18:00:00", "repair flow");
 
         String repairResponse = mockMvc.perform(post("/api/repairs")
                         .header("Authorization", "Bearer " + studentToken)
@@ -1127,6 +1128,8 @@ class AdminServerApplicationTests {
     void adminCanUpdateRepairStatusAndDeviceStatusFollows() throws Exception {
         String studentToken = loginAndGetToken("20230001", "0000");
         String adminToken = loginAndGetToken("A001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        pickupApprovedReservation(studentToken, teacherToken, "2026-04-04 09:00:00", "2026-04-04 18:00:00", "repair update flow");
 
         String repairId = extractField(mockMvc.perform(post("/api/repairs")
                         .header("Authorization", "Bearer " + studentToken)
@@ -1177,6 +1180,8 @@ class AdminServerApplicationTests {
     void duplicateActiveRepairIsRejectedAndUnrepairableKeepsDamagedStatus() throws Exception {
         String studentToken = loginAndGetToken("20230001", "0000");
         String adminToken = loginAndGetToken("A001", "0000");
+        String teacherToken = loginAndGetToken("T2026001", "0000");
+        pickupApprovedReservation(studentToken, teacherToken, "2026-04-05 09:00:00", "2026-04-05 18:00:00", "duplicate repair flow");
 
         String repairId = extractField(mockMvc.perform(post("/api/repairs")
                         .header("Authorization", "Bearer " + studentToken)
@@ -1820,6 +1825,29 @@ class AdminServerApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.status").value("PICKUP_PENDING"));
+
+        return reservationId;
+    }
+
+    private String pickupApprovedReservation(String studentToken, String teacherToken, String startTime, String endTime, String purpose) throws Exception {
+        String reservationId = createAndApproveReservation(studentToken, teacherToken, startTime, endTime, purpose);
+        String borrowRecordResponse = mockMvc.perform(get("/api/profile/borrow-records")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .param("status", "PICKUP_PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String recordId = extractField(borrowRecordResponse, "\"recordId\":(\\d+)");
+        mockMvc.perform(put("/api/borrow-records/" + recordId + "/pickup")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.status").value("BORROWING"));
 
         return reservationId;
     }

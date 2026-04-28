@@ -48,6 +48,10 @@ function readBorrowRecords() {
   }
 }
 
+export function listMockBorrowRecords() {
+  return readBorrowRecords()
+}
+
 function writeBorrowRecords(items: BorrowRecordItem[]) {
   localStorage.setItem(BORROW_RECORDS_STORAGE_KEY, JSON.stringify(items))
 }

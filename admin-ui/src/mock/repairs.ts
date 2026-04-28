@@ -1,4 +1,5 @@
 import { mockGetDeviceDetail } from '@/mock/devices'
+import { listMockBorrowRecords } from '@/mock/borrow-records'
 import { getCurrentUserIdFromToken, readMockUsers, wait } from '@/mock/userStore'
 import type {
   CreateRepairPayload,
@@ -111,6 +112,16 @@ export async function mockCreateRepair(token: string, payload: CreateRepairPaylo
   }
 
   const device = await mockGetDeviceDetail(payload.deviceId)
+  const hasActiveBorrow = listMockBorrowRecords().some(
+    (item) =>
+      item.userId === user.userId &&
+      item.deviceId === payload.deviceId &&
+      (item.status === 'BORROWING' || item.status === 'OVERDUE')
+  )
+  if (!hasActiveBorrow) {
+    throw new Error('Only currently borrowed devices can be submitted for repair')
+  }
+
   const items = readRepairs()
   const activeExists = items.some(
     (item) => item.deviceId === payload.deviceId && item.status !== 'COMPLETED' && item.status !== 'UNREPAIRABLE'

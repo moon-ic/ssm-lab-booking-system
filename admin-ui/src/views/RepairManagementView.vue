@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { listMyBorrowRecords } from '@/api/profile'
 import { listDevices } from '@/api/devices'
 import { createRepair, getRepairDetail, listRepairs, updateRepairStatus } from '@/api/repairs'
 import { useAuthStore } from '@/store/auth'
@@ -74,11 +75,31 @@ async function loadRepairs() {
 
 async function loadDevicesForCreate() {
   try {
-    const data = await listDevices({
-      pageNum: 1,
-      pageSize: 100
-    })
-    devices.value = data.list
+    const [devicePage, borrowPage] = await Promise.all([
+      listDevices({
+        pageNum: 1,
+        pageSize: 100
+      }),
+      canCreate.value
+        ? listMyBorrowRecords({
+            status: undefined,
+            pageNum: 1,
+            pageSize: 100
+          })
+        : Promise.resolve({ list: [] })
+    ])
+
+    if (!canCreate.value) {
+      devices.value = devicePage.list
+      return
+    }
+
+    const borrowingDeviceIds = new Set(
+      borrowPage.list
+        .filter((item) => item.status === 'BORROWING' || item.status === 'OVERDUE')
+        .map((item) => item.deviceId)
+    )
+    devices.value = devicePage.list.filter((item) => borrowingDeviceIds.has(item.deviceId))
   } catch {
     devices.value = []
   }
@@ -168,7 +189,7 @@ onMounted(() => {
       <span class="eyebrow">维修模块</span>
       <h2>维修申请与处理流程</h2>
       <p>
-        学生可在设备故障时提交维修申请，管理员可跟踪并处理从待处理到完成或无法修复的全过程。
+        学生仅可为自己当前借用中的设备发起报修，管理员可跟踪并处理从待处理到完成或无法修复的全过程。
       </p>
     </section>
 
@@ -234,12 +255,15 @@ onMounted(() => {
     </section>
 
     <ElDialog v-model="createDialogVisible" title="发起报修" width="520px" @closed="resetCreateForm">
-      <ElForm ref="createFormRef" :model="createForm" :rules="createRules" label-position="top">
+        <ElForm ref="createFormRef" :model="createForm" :rules="createRules" label-position="top">
         <ElFormItem label="设备" prop="deviceId">
-          <ElSelect v-model="createForm.deviceId" placeholder="请选择设备">
+          <ElSelect v-model="createForm.deviceId" placeholder="请选择正在借用中的设备">
             <ElOption v-for="device in devices" :key="device.deviceId" :label="`${device.deviceName} / ${device.deviceCode}`" :value="device.deviceId" />
           </ElSelect>
         </ElFormItem>
+        <p v-if="canCreate && devices.length === 0" class="dialog-tip">
+          当前没有可报修的设备。只有处于借用中或已逾期但仍未归还的设备，才可以提交报修申请。
+        </p>
         <ElFormItem label="故障描述" prop="description">
           <ElInput v-model="createForm.description" type="textarea" :rows="4" placeholder="请描述设备故障情况" />
         </ElFormItem>
@@ -373,6 +397,13 @@ onMounted(() => {
 
 .full-width {
   grid-column: 1 / -1;
+}
+
+.dialog-tip {
+  margin: 0 0 14px;
+  color: #b45309;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 @media (max-width: 960px) {

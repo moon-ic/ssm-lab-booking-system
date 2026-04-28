@@ -1,45 +1,10 @@
 import { getCurrentUserIdFromToken, readMockUsers, wait } from '@/mock/userStore'
+import { listMockBorrowRecords } from '@/mock/borrow-records'
 import {
   mockConfirmMyMessage as mockConfirmMyMessageShared,
   mockListMyMessages as mockListMyMessagesShared
 } from '@/mock/messages'
 import type { BorrowRecordItem, BorrowRecordQuery, MessageQuery, PageResult, ProfileSummary } from '@/types/profile'
-
-const borrowRecords: BorrowRecordItem[] = [
-  {
-    recordId: 9001,
-    reservationId: 8001,
-    userId: 4,
-    deviceId: 1001,
-    deviceName: 'Canon EOS Camera',
-    status: 'BORROWING',
-    pickupTime: '2026-03-28 09:30:00',
-    expectedReturnTime: '2026-04-02 18:00:00',
-    deviceCondition: 'Good'
-  },
-  {
-    recordId: 9002,
-    reservationId: 8002,
-    userId: 4,
-    deviceId: 1002,
-    deviceName: 'Projector A',
-    status: 'RETURNED',
-    pickupTime: '2026-03-15 10:00:00',
-    expectedReturnTime: '2026-03-20 18:00:00',
-    returnTime: '2026-03-19 15:20:00',
-    deviceCondition: 'Normal'
-  },
-  {
-    recordId: 9003,
-    reservationId: 8003,
-    userId: 5,
-    deviceId: 1003,
-    deviceName: 'Microscope Set',
-    status: 'PICKUP_PENDING',
-    pickupTime: '2026-04-01 08:00:00',
-    expectedReturnTime: '2026-04-05 18:00:00'
-  }
-]
 
 function currentUser(token: string) {
   const userId = getCurrentUserIdFromToken(token)
@@ -81,7 +46,7 @@ export async function mockGetProfile(token: string): Promise<ProfileSummary> {
 export async function mockListMyBorrowRecords(token: string, query: BorrowRecordQuery) {
   await wait(220)
   const user = currentUser(token)
-  const filtered = borrowRecords
+  const filtered = listMockBorrowRecords()
     .filter((item) => item.userId === user.userId)
     .filter((item) => !query.status || item.status === query.status)
 

@@ -159,14 +159,15 @@ describe('api integration with mock backend', () => {
       throw new Error('Expected borrow record to exist')
     }
     await pickupBorrowRecord(record.recordId, {})
-    await returnBorrowRecord(record.recordId, { returnTime: '2026-04-10 17:30', deviceCondition: 'BROKEN' })
 
     const repair = await createRepair({
       deviceId: device.deviceId,
-      description: 'broken after return'
+      description: 'broken during borrowing'
     })
     expect((await getRepairDetail(repair.repairId)).status).toBe('PENDING')
     expect((await listRepairs({ pageNum: 1, pageSize: 20 })).list.some((item) => item.repairId === repair.repairId)).toBe(true)
+
+    await returnBorrowRecord(record.recordId, { returnTime: '2026-04-10 17:30', deviceCondition: 'BROKEN' })
 
     const profile = await getProfile()
     expect(profile.roleCode).toBe('STUDENT')

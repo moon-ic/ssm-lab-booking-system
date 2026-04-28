@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { useRouter } from "vue-router";
 import { listDevices } from "@/api/devices";
 import {
     approveReservation,
@@ -20,6 +21,7 @@ import type {
 } from "@/types/reservation";
 
 const authStore = useAuthStore();
+const router = useRouter();
 const loading = ref(false);
 const createDialogVisible = ref(false);
 const detailDialogVisible = ref(false);
@@ -54,6 +56,7 @@ const currentRole = computed(
 const canCreate = computed(() => ["STUDENT", "TEACHER"].includes(currentRole.value));
 const isTeacher = computed(() => currentRole.value === "TEACHER");
 const isAdmin = computed(() => currentRole.value === "SUPER_ADMIN" || currentRole.value === "ADMIN");
+const isStudent = computed(() => currentRole.value === "STUDENT");
 const statusOptions: ReservationStatus[] = [
     "PENDING",
     "APPROVED",
@@ -150,6 +153,15 @@ function approveButtonText(row: ReservationItem) {
         return "终审通过";
     }
     return "教师通过";
+}
+
+function canGoPickup(row: ReservationItem) {
+    const currentUserId = authStore.state.currentUser?.userId ?? authStore.state.session?.userInfo.userId;
+    return isStudent.value && row.applicantId === currentUserId && row.status === "PICKUP_PENDING";
+}
+
+function goToPickup() {
+    void router.push({ name: "profile" });
 }
 
 async function loadReservations() {
@@ -289,6 +301,9 @@ onMounted(() => {
             <span class="eyebrow">预约模块</span>
             <h2>设备借用预约与审核流程</h2>
             <p>学生提交后需要先教师审核再进入管理员终审，教师本人发起的借用申请会直接进入管理员审核，通过后即可领取。</p>
+            <div v-if="isStudent" class="pickup-tip">
+                审核完成后，状态变为“待领取”时，请前往个人中心的“我的借用记录”完成领取。
+            </div>
         </section>
 
         <section class="toolbar-card">
@@ -352,6 +367,15 @@ onMounted(() => {
                                 </ElButton>
                                 <ElButton v-if="canCancel(row)" link type="warning" @click="handleCancel(row)">
                                     取消
+                                </ElButton>
+                                <ElButton
+                                    v-if="canGoPickup(row)"
+                                    link
+                                    type="primary"
+                                    class="pickup-link"
+                                    @click="goToPickup"
+                                >
+                                    去个人中心领取
                                 </ElButton>
                             </div>
                         </template>
@@ -482,6 +506,16 @@ onMounted(() => {
     color: #475569;
 }
 
+.pickup-tip {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    color: #0f766e;
+    background: linear-gradient(135deg, rgba(204, 251, 241, 0.95), rgba(153, 246, 228, 0.72));
+    font-size: 14px;
+    line-height: 1.6;
+}
+
 .eyebrow {
     display: inline-flex;
     width: fit-content;
@@ -517,6 +551,10 @@ onMounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.pickup-link {
+    font-weight: 700;
 }
 
 .table-scroll {

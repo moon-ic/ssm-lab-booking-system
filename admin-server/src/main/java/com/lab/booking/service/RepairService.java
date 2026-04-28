@@ -2,8 +2,10 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.dto.RepairDtos;
+import com.lab.booking.mapper.BorrowRecordMapper;
 import com.lab.booking.mapper.DeviceMapper;
 import com.lab.booking.mapper.RepairMapper;
+import com.lab.booking.model.BorrowStatus;
 import com.lab.booking.model.DeviceEntity;
 import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.RepairEntity;
@@ -27,17 +29,20 @@ public class RepairService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final RepairMapper repairMapper;
+    private final BorrowRecordMapper borrowRecordMapper;
     private final DeviceMapper deviceMapper;
     private final AuthRepository authRepository;
     private final AuthService authService;
 
     public RepairService(
             RepairMapper repairMapper,
+            BorrowRecordMapper borrowRecordMapper,
             DeviceMapper deviceMapper,
             AuthRepository authRepository,
             AuthService authService
     ) {
         this.repairMapper = repairMapper;
+        this.borrowRecordMapper = borrowRecordMapper;
         this.deviceMapper = deviceMapper;
         this.authRepository = authRepository;
         this.authService = authService;
@@ -46,6 +51,7 @@ public class RepairService {
     public Map<String, Object> createRepair(RepairDtos.CreateRepairRequest request) {
         UserEntity applicant = requireRoles(RoleCode.STUDENT);
         DeviceEntity device = getExistingDevice(request.deviceId());
+        ensureBorrowingByApplicant(request.deviceId(), applicant.getUserId());
         ensureNoActiveRepair(request.deviceId());
 
         RepairEntity repair = new RepairEntity();
@@ -115,6 +121,16 @@ public class RepairService {
         deviceMapper.upsertDevice(device);
 
         return toRepairView(repair);
+    }
+
+    private void ensureBorrowingByApplicant(Long deviceId, Long applicantId) {
+        boolean borrowingRecordExists = borrowRecordMapper.selectAll().stream()
+                .anyMatch(record -> Objects.equals(record.getDeviceId(), deviceId)
+                        && Objects.equals(record.getUserId(), applicantId)
+                        && (record.getStatus() == BorrowStatus.BORROWING || record.getStatus() == BorrowStatus.OVERDUE));
+        if (!borrowingRecordExists) {
+            throw new ApiException(409, "仅可为当前正在借用中的设备申请报修");
+        }
     }
 
     private void ensureNoActiveRepair(Long deviceId) {
