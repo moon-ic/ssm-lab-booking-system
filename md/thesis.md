@@ -2,9 +2,11 @@
 
 ## 摘要
 
-高校实验室的设备管理长期面临一个现实困境：设备数量越来越多，但管理手段基本还是纸质表格和人工登记。师生常常不知道某台设备当前是否可用，管理员要翻阅记录才能确认借还情况，一旦设备损坏，责任也难以追溯。这些问题在设备种类较多、使用频率较高的实验室中尤为突出。
+高校实验室设备管理长期依赖纸质台账与人工登记，设备状态不透明、借还难追踪、责任难认定等问题普遍存在，严重制约管理效率与设备利用率。
 
-针对上述问题，本文开发了一套基于SSM框架（Spring + SpringMVC + MyBatis）的高校实验室设备预约管理系统。后端以Spring Boot搭建，引入Spring Security处理多角色认证与权限控制，持久化层使用MyBatis操作MySQL数据库；前端采用Vue 3与Element Plus构建管理界面，通过Vue Router实现基于角色的路由访问控制，Pinia负责全局状态管理。系统划分了超级管理员、管理员、教师、学生四种角色，功能涵盖设备台账维护、预约申请与分级审批、借用归还记录、维修流程跟踪、消息通知和统计分析，设备状态随各业务环节实时联动，形成从申请到归还的完整记录。测试结果显示各模块功能符合预期，权限边界清晰，在中小规模实验室场景下具备实际可用性。
+本文基于SSM框架（Spring + SpringMVC + MyBatis）设计并实现了一套高校实验室设备预约管理系统。后端以Spring Boot搭建，Spring Security负责多角色认证与细粒度权限控制，MyBatis操作MySQL完成持久化；前端采用Vue 3 + Element Plus构建单页管理界面，Vue Router实现权限路由，Pinia管理全局状态。系统划分超级管理员、管理员、教师、学生四类角色，覆盖设备台账维护、预约申请与分级审批、借用归还、维修流程跟踪、消息通知及统计分析，设备状态随各业务环节实时联动，形成申请至归还的完整闭环。
+
+本系统将分散的人工流程统一纳入数字化平台，有效降低管理员重复劳动，提升设备使用透明度与操作可追溯性；设备使用数据的积累可为采购决策与维护计划提供数据支撑，具有较好的应用推广价值。系统采用前后端分离架构与RBAC权限模型，在多角色权限控制与跨模块业务闭环方面做了较完整的工程实践，对同类高校管理信息系统的设计与实现具有参考意义。测试结果表明各模块功能正确、权限边界有效，在中小规模实验室场景下具备实际可用性。
 
 **关键词：** 高校实验室；设备预约管理；SSM框架；前后端分离；Spring Boot；Vue 3
 
@@ -12,11 +14,11 @@
 
 ## Abstract
 
-Managing laboratory equipment in universities is more complicated than it looks. When dozens of students and teachers share a limited set of devices, the usual approach — paper sign-in sheets and manual approval — tends to break down quickly. Reservations overlap, borrowed equipment goes untracked, and when something gets damaged, it is often unclear who is responsible. The problem is not unique to any one institution; it reflects a broader gap between how labs are actually managed and what modern information systems can offer.
+University laboratory equipment management has long relied on paper-based ledgers and manual registration. Device availability is opaque, borrowing records are hard to track, and accountability is difficult to establish when equipment is damaged — problems that significantly constrain management efficiency and equipment utilization.
 
-This paper presents a laboratory equipment reservation management system built on the SSM framework (Spring + SpringMVC + MyBatis). The back end runs on Spring Boot, with Spring Security handling authentication and role-based access control, and MyBatis managing database operations against a MySQL backend. The front end is a Vue 3 single-page application using Element Plus for UI components, Vue Router for permission-aware navigation, and Pinia for authentication state. Four user roles are supported: super administrator, administrator, teacher, and student. The system covers equipment inventory management, reservation submission and multi-level approval, borrowing and return tracking, repair workflow, message notifications, and usage statistics. Device status updates automatically as reservations are approved, equipment is picked up, returned, or sent for repair — so the displayed status reflects the actual situation rather than lagging behind.
+This paper presents a laboratory equipment reservation management system built on the SSM framework (Spring + SpringMVC + MyBatis). The back end runs on Spring Boot, with Spring Security providing multi-role authentication and fine-grained access control, and MyBatis handling database operations against MySQL. The front end is a Vue 3 single-page application using Element Plus for UI components, Vue Router for role-based navigation, and Pinia for global state management. Four user roles are supported: super administrator, administrator, teacher, and student. The system covers equipment inventory management, reservation submission and multi-level approval, borrowing and return tracking, repair workflow, message notifications, and usage statistics. Device status updates automatically at each business step, forming a complete traceable loop from reservation to return.
 
-Testing shows that individual modules work as designed and that role boundaries hold up under cross-role access attempts. For a small-to-medium university lab with around 50–200 devices and 30–100 users, the system is a practical replacement for paper-based administration. The implementation may also serve as a reference point for similar management systems that combine a Spring Boot back end with a Vue 3 front end.
+By consolidating scattered manual processes onto a unified digital platform, the system substantially reduces repetitive administrative work, improves transparency over device availability, and enables full traceability of operations. Accumulated usage data can also inform procurement decisions and maintenance planning, giving the system strong practical application value. The implementation adopts a front-end/back-end separated architecture with an RBAC permission model, contributing a complete engineering practice in multi-role access control and cross-module workflow integration that can serve as a reference for similar university management information systems. Testing confirms that all modules function correctly and permission boundaries hold under cross-role access attempts, making the system viable for deployment in small-to-medium laboratory settings.
 
 **Keywords:** University laboratory; Equipment reservation management; SSM framework; Front-end and back-end separation; Spring Boot; Vue 3; RBAC access control
 
@@ -1239,33 +1241,40 @@ flowchart TD
 
 ## 7.1 工作总结
 
-本文针对高校实验室设备管理中流程分散、记录不完整、责任难追溯等问题[21]，开发了一套基于SSM框架的设备预约管理系统。后端用Spring Boot整合Spring MVC、Spring Security和MyBatis，前端用Vue 3配合Element Plus、Pinia和Vue Router，通过RESTful接口交互。
+本文针对高校实验室设备管理中流程分散、记录不完整、责任难追溯等问题，开发了一套基于SSM框架的设备预约管理系统。后端用Spring Boot整合Spring MVC、Spring Security和MyBatis，前端用Vue 3配合Element Plus、Pinia和Vue Router，通过RESTful接口交互。
 
-系统实现的功能覆盖了核心业务流程：**认证模块**采用无状态令牌认证，通过Spring Security过滤链做请求级权限控制，首次登录强制改密机制防止默认密码长期存在带来的安全风险。**用户管理模块**构建了超级管理员—管理员—教师—学生的四级账户体系，各角色操作权限基于RBAC模型约束。**设备管理模块**维护设备台账和实时状态，图片上传和多条件筛选基本满足日常管理需求。**预约管理模块**根据申请人角色自动调整审批路径（学生申请经教师初审再到管理员终审，教师申请直接进终审），加入了时间冲突检测和超期失效定时任务。**借用归还模块**从预约终审通过起自动生成借用记录，定时扫描标记逾期状态并推送提醒，完整保留了设备流转轨迹[21]。**维修管理模块**在设备损坏归还时自动创建维修申请，避免漏记，管理员可跟踪进度直到维修结束。**消息通知模块**在各业务节点触发推送，采用幂等机制避免重复消息，覆盖六类场景。**统计分析模块**提供概览数据和三类排行榜，支持按时间维度筛选，供管理员参考。
+系统实现的功能覆盖了核心业务流程：
+(1) 认证模块采用无状态令牌认证，通过Spring Security过滤链做请求级权限控制，首次登录强制改密机制防止默认密码长期存在带来的安全风险。
+(2) 用户管理模块构建了超级管理员—管理员—教师—学生的四级账户体系，各角色操作权限基于RBAC模型约束。
+(3) 设备管理模块维护设备台账和实时状态，图片上传和多条件筛选基本满足日常管理需求。
+(4) 预约管理模块根据申请人角色自动调整审批路径（学生申请经教师初审再到管理员终审，教师申请直接进终审），加入了时间冲突检测和超期失效定时任务。
+(5) 借用归还模块从预约终审通过起自动生成借用记录，定时扫描标记逾期状态并推送提醒，完整保留了设备流转轨迹。
+(6) 维修管理模块在设备损坏归还时自动创建维修申请，避免漏记，管理员可跟踪进度直到维修结束。
+(7) 消息通知模块在各业务节点触发推送，采用幂等机制避免重复消息，覆盖六类场景。
+(8) 统计分析模块提供概览数据和三类排行榜，支持按时间维度筛选，供管理员参考。
 
 经测试验证，各模块功能按预期工作，权限边界经过越权测试未见绕过，设备状态在各业务操作前后保持一致。系统在设备约50至200件、用户约30至100人的规模下运行稳定，能够替代纸质管理流程。
 
 ## 7.2 系统创新点
 
-系统在设计上有几处值得单独说明的地方。
-
-**自适应审批流转。** 审批路径根据申请人角色决定：学生的预约需要先过教师初审，再到管理员终审；教师的预约直接进管理员终审。这样的设计和实验室实际的组织层级对应，省去了不必要的审批步骤，同时每一层级的监管责任也保留了下来。
-
-**设备状态的全周期联动。** 设备状态不是一个独立字段，而是随业务流程实时更新的——预约通过变为"已预约"，取用后变为"借出中"，归还完好恢复"可用"，损坏归还变为"损坏"，进入维修变为"维修中"，修复后再回到"可用"。每次状态变化都在对应的业务操作里同步完成，不依赖后台同步脚本，所以实时性较好，重复占用的情况基本可以避免。国内研究也表明，设备状态的动态精准管理是提升高校实验室资源利用率和管理规范性的核心要素[23]。
-
-**幂等消息推送。** 通知模块在生成消息前会先检查该用户是否已有同类型且未读的同一业务对象的通知。这个设计主要是为了应对定时任务重复执行的情况——如果每次扫描逾期记录都推一条消息，用户很快就会看到一堆重复提醒，体验不好。加上幂等检查后，相同的通知只发一次。
-
-**路由元数据驱动的前端权限控制。** 权限规则集中写在路由的`meta`字段里，路由守卫和菜单渲染都从同一个地方读取，而不是在各个页面组件里各自判断角色。这样维护起来更清晰，新增页面时也不容易遗漏权限配置。
+本系统在设计上有几处值得单独说明的地方。
+（1） 自适应审批流转。 审批路径根据申请人角色决定：学生的预约需要先过教师初审，再到管理员终审；教师的预约直接进管理员终审。这样的设计和实验室实际的组织层级对应，省去了不必要的审批步骤，同时每一层级的监管责任也保留了下来。
+（2） 设备状态的全周期联动。 设备状态不是一个独立字段，而是随业务流程实时更新的——预约通过变为“已预约”，取用后变为“借出中”，归还完好恢复“可用”，损坏归还变为“损坏”，进入维修变为“维修中”，修复后再回到“可用”。每次状态变化都在对应的业务操作里同步完成，不依赖后台同步脚本，所以实时性较好，重复占用的情况基本可以避免。源利用率和管理规范性的核心要素[23]。
+（3） 幂等消息推送。 通知模块在生成消息前会先检查该用户是否已有同类型且未读的同一业务对象的通知。这个设计主要是为了应对定时任务重复执行的情况——如果每次扫描逾期记录都推一条消息，用户很快就会看到一堆重复提醒，体验不好。加上幂等检查后，相同的通知只发一次。
+（4） 路由元数据驱动的前端权限控制。 权限规则集中写在路由的`meta`字段里，路由守卫和菜单渲染都从同一个地方读取，而不是在各个页面组件里各自判断角色。这样维护起来更清晰，新增页面时也不容易遗漏权限配置。
 
 ## 7.3 不足与展望
 
-系统在实现过程中受开发周期限制，留下了几处已知的问题。
-
-**技术层面的问题**主要有两个。第一，查询接口目前是全量加载数据到内存后再做过滤和分页，数据量小的时候没什么感觉，但如果设备和预约记录积累到几千条以上，响应时间会明显上升，后续需要改为数据库层的条件查询和分页。第二，令牌目前存储在应用内存里，单节点部署没有问题，但如果要横向扩展到多个服务实例，不同节点无法共享令牌，用户可能会被随机踢出。迁移到Redis可以解决这个问题。
-
-**功能层面**也有几处不足。批量导入设备这个需求在设备数量较多时比较迫切，目前只能逐条录入，初始化阶段工作量大。另外，系统只有Web管理端，学生和教师如果想在手机上查看借用状态或提交预约，体验并不好，做一个轻量的移动端页面是比较现实的改进方向；已有同类高校实验室管理系统在这方面已有实践可供参考[24]。消息通知目前只在消息中心里看，不够主动，对于即将到期这类时效性较强的提醒，加入邮件或浏览器推送渠道会有帮助。
-
+尽管本系统已基本实现高校实验室设备预约管理的核心功能，但受开发周期和应用场景规模的限制，系统在部分方面仍存在一定不足，有待在后续工作中进一步完善。
+在技术实现层面主要有两个不足：
+（1） 查询接口目前是全量加载数据到内存后再做过滤和分页，数据量小的时候没什么感觉，但如果设备和预约记录积累到几千条以上，响应时间会明显上升，后续需要改为数据库层的条件查询和分页。
+（2） 令牌目前存储在应用内存里，单节点部署没有问题，但如果要横向扩展到多个服务实例，不同节点无法共享令牌，用户可能会被随机踢出。迁移到Redis可以解决这个问题。
+在功能完善层面也有几处不足：
+（1） 批量导入设备这个需求在设备数量较多时比较迫切，目前只能逐条录入，初始化阶段工作量大。
+（2） 系统只有Web管理端，学生和教师如果想在手机上查看借用状态或提交预约，体验并不好，做一个轻量的移动端页面是比较现实的改进方向；已有同类高校实验室管理系统在这方面已有实践可供参考[24]。
+（3） 消息通知目前只在消息中心里看，不够主动，对于即将到期这类时效性较强的提醒，加入邮件或浏览器推送渠道会有帮助。
 这些问题大部分属于可以在现有架构上迭代改进的范围，不需要重构整个系统。整体而言，系统完成了核心功能，具备在实际实验室中试用的条件，后续优化可以根据实际使用反馈逐步推进。
+随着高校信息化建设的持续推进，实验室设备管理系统在功能深度和技术架构上均面临更高的要求。本系统的研究与实现为高校实验室信息化管理提供了一套可参考的实践方案，后续将在上述方向持续优化，不断提升系统的稳定性、易用性和可扩展性，以更好地服务于高校实验室的日常管理工作。
 
 ---
 
