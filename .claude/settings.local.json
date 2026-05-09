@@ -34,7 +34,13 @@
       "WebFetch(domain:www.xdxxkj.cn)",
       "WebFetch(domain:www.qkzjzz.com)",
       "WebFetch(domain:opticsjournal.net)",
-      "Bash(grep \"\\\\[[0-9]\\\\{1,2\\\\}\\\\]\")"
+      "Bash(grep \"\\\\[[0-9]\\\\{1,2\\\\}\\\\]\")",
+      "WebFetch(domain:sns.wanfangdata.com.cn)",
+      "WebFetch(domain:www.sciopen.com)",
+      "WebFetch(domain:c.wanfangdata.com.cn)",
+      "WebFetch(domain:zcb.sdu.edu.cn)",
+      "WebFetch(domain:www.oalib.com)",
+      "WebFetch(domain:syjl.cbpt.cnki.net)"
     ]
   }
 }
