@@ -53,10 +53,7 @@ function fillDemo(loginId: string, password: string) {
         <section class="login-hero">
             <span class="login-badge">设备借用管理后台</span>
             <h1>实验设备借用后台</h1>
-            <p>
-                登录后可继续进入设备管理、预约审核、借用记录和后续业务模块。当前页面已内置 mock
-                场景，便于前后端并行开发。
-            </p>
+            <p>下为4种类型测试账号，其功能完备，可供参考。</p>
             <div class="demo-panel">
                 <button type="button" @click="fillDemo('SA001', '0000')">超级管理员：SA001 / 0000</button>
                 <button type="button" @click="fillDemo('A001', '0000')">管理员：A001 / 0000</button>
@@ -87,14 +84,9 @@ function fillDemo(loginId: string, password: string) {
                 </ElFormItem>
 
                 <ElButton class="submit-button" type="primary" size="large" :loading="loading" @click="submit">
-                    登录系统
+                    登录
                 </ElButton>
             </ElForm>
-
-            <ul class="login-tips">
-                <li>当前联调用演示账号密码为 `00000000`。</li>
-                <li>如果更新了环境配置或后端权限规则，记得重启 Vite 前端服务。</li>
-            </ul>
         </section>
     </div>
 </template>
