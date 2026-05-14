@@ -47,7 +47,9 @@
       "Bash(pip install *)",
       "WebFetch(domain:journal.irpi.or.id)",
       "WebFetch(domain:ajesjournal.org)",
-      "Bash(Out-File -FilePath C:\\\\Users\\\\86183\\\\AppData\\\\Local\\\\Temp\\\\ajes_text.txt -Encoding utf8)"
+      "Bash(Out-File -FilePath C:\\\\Users\\\\86183\\\\AppData\\\\Local\\\\Temp\\\\ajes_text.txt -Encoding utf8)",
+      "Bash(Remove-Item \"D:\\\\program\\\\booking-skill-demo\\\\md\\\\ref18-springboot-vue-attendance.md\" -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem \"D:\\\\program\\\\booking-skill-demo\\\\md\\\\\" -Filter \"ref*.md\")"
     ]
   }
 }
