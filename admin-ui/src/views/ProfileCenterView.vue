@@ -39,15 +39,10 @@ const returnSubmitting = ref(false);
 const activeReturnRecord = ref<BorrowRecordItem | null>(null);
 
 const returnForm = reactive({
-    returnTime: "",
-    deviceCondition: "NORMAL"
+    returnTime: ""
 });
 
 const borrowStatusOptions: BorrowStatus[] = ["PICKUP_PENDING", "BORROWING", "RETURNED", "OVERDUE"];
-const deviceConditionOptions = [
-    { label: "正常", value: "NORMAL" },
-    { label: "损坏", value: "DAMAGED" }
-];
 const messageTypeOptions: NotificationType[] = [
     "FIRST_LOGIN_PASSWORD_CHANGE",
     "PASSWORD_RESET",
@@ -108,6 +103,13 @@ function borrowStatusLabel(status: BorrowStatus) {
         default:
             return status;
     }
+}
+
+function effectiveBorrowStatusLabel(row: BorrowRecordItem) {
+    if (row.status !== "RETURNED" && row.expectedReturnTime && new Date(row.expectedReturnTime) < new Date()) {
+        return "已逾期";
+    }
+    return borrowStatusLabel(row.status);
 }
 
 function confirmStatusLabel(status: "UNCONFIRMED" | "CONFIRMED") {
@@ -191,7 +193,6 @@ async function handlePickup(row: BorrowRecordItem) {
 function openReturnDialog(row: BorrowRecordItem) {
     activeReturnRecord.value = row;
     returnForm.returnTime = formatCurrentMinute();
-    returnForm.deviceCondition = "NORMAL";
     returnDialogVisible.value = true;
 }
 
@@ -204,8 +205,7 @@ async function submitReturn() {
 
     try {
         await returnBorrowRecord(activeReturnRecord.value.recordId, {
-            returnTime: returnForm.returnTime,
-            deviceCondition: returnForm.deviceCondition
+            returnTime: returnForm.returnTime
         });
         ElMessage.success("设备已归还");
         returnDialogVisible.value = false;
@@ -312,7 +312,7 @@ onMounted(() => {
                         <ElTableColumn prop="deviceName" label="设备" min-width="180" />
                         <ElTableColumn prop="status" label="状态" min-width="120">
                             <template #default="{ row }">
-                                {{ borrowStatusLabel(row.status) }}
+                                {{ effectiveBorrowStatusLabel(row) }}
                             </template>
                         </ElTableColumn>
                         <ElTableColumn prop="pickupTime" label="领取时间" min-width="160" />
@@ -424,16 +424,6 @@ onMounted(() => {
                         format="YYYY-MM-DD HH:mm"
                         style="width: 100%"
                     />
-                </ElFormItem>
-                <ElFormItem label="设备状况">
-                    <ElSelect v-model="returnForm.deviceCondition" style="width: 100%">
-                        <ElOption
-                            v-for="option in deviceConditionOptions"
-                            :key="option.value"
-                            :label="option.label"
-                            :value="option.value"
-                        />
-                    </ElSelect>
                 </ElFormItem>
             </ElForm>
             <template #footer>

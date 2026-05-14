@@ -33,5 +33,5 @@ export interface PickupPayload {}
 
 export interface ReturnPayload {
   returnTime: string
-  deviceCondition: string
+  deviceCondition?: string
 }

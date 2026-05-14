@@ -324,7 +324,7 @@ public class ReservationService {
         DeviceEntity device = findDevice(reservation.getDeviceId());
         result.put("reservationId", reservation.getReservationId());
         result.put("deviceId", reservation.getDeviceId());
-        result.put("deviceName", device == null ? "已删除设备 #" + reservation.getDeviceId() : device.getDeviceName());
+        result.put("deviceName", device == null ? "（设备已删除）" : device.getDeviceName());
         result.put("applicantId", reservation.getApplicantId());
         result.put("applicantName", applicant.getName());
         result.put("startTime", formatDateTime(reservation.getStartTime()));

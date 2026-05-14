@@ -76,7 +76,7 @@ public class StatisticsService {
                     DeviceEntity device = deviceMapper.selectById(entry.getKey());
                     Map<String, Object> result = new LinkedHashMap<>();
                     result.put("deviceId", entry.getKey());
-                    result.put("deviceName", device == null ? "已删除设备 #" + entry.getKey() : device.getDeviceName());
+                    result.put("deviceName", device == null ? "（设备已删除）" : device.getDeviceName());
                     result.put("deviceCode", device == null ? null : device.getDeviceCode());
                     result.put("imageUrl", device == null ? null : device.getImageUrl());
                     result.put("borrowCount", entry.getValue());

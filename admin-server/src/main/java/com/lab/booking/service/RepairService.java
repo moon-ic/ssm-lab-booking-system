@@ -196,7 +196,7 @@ public class RepairService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("repairId", repair.getRepairId());
         result.put("deviceId", repair.getDeviceId());
-        result.put("deviceName", device == null ? "已删除设备 #" + repair.getDeviceId() : device.getDeviceName());
+        result.put("deviceName", device == null ? "（设备已删除）" : device.getDeviceName());
         result.put("applicantId", repair.getApplicantId());
         result.put("applicantName", applicant.getName());
         result.put("description", repair.getDescription());

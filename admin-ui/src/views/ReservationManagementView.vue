@@ -110,6 +110,23 @@ function reservationStatusLabel(status: ReservationStatus) {
     }
 }
 
+function effectiveReservationStatusLabel(row: ReservationItem) {
+    if (row.status === "PICKUP_PENDING" && row.endTime && new Date(row.endTime) < new Date()) {
+        return "已逾期";
+    }
+    return reservationStatusLabel(row.status);
+}
+
+function effectiveReservationTagType(row: ReservationItem) {
+    if (row.status === "PICKUP_PENDING" && row.endTime && new Date(row.endTime) < new Date()) {
+        return "danger";
+    }
+    if (row.status === "PENDING") return "warning";
+    if (row.status === "APPROVED") return "info";
+    if (row.status === "PICKUP_PENDING") return "success";
+    return "info";
+}
+
 function disabledStartDate(date: Date) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -334,18 +351,8 @@ onMounted(() => {
                     <ElTableColumn prop="endTime" label="结束时间" min-width="160" />
                     <ElTableColumn prop="status" label="状态" min-width="140">
                         <template #default="{ row }">
-                            <ElTag
-                                :type="
-                                    row.status === 'PENDING'
-                                        ? 'warning'
-                                        : row.status === 'APPROVED'
-                                          ? 'info'
-                                          : row.status === 'PICKUP_PENDING'
-                                            ? 'success'
-                                            : 'info'
-                                "
-                            >
-                                {{ reservationStatusLabel(row.status) }}
+                            <ElTag :type="effectiveReservationTagType(row)">
+                                {{ effectiveReservationStatusLabel(row) }}
                             </ElTag>
                         </template>
                     </ElTableColumn>

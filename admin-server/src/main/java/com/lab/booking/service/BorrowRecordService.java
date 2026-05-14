@@ -274,7 +274,7 @@ public class BorrowRecordService {
         result.put("userId", record.getUserId());
         result.put("userName", applicant.getName());
         result.put("deviceId", record.getDeviceId());
-        result.put("deviceName", device == null ? "已删除设备 #" + record.getDeviceId() : device.getDeviceName());
+        result.put("deviceName", device == null ? "（设备已删除）" : device.getDeviceName());
         result.put("status", record.getStatus());
         result.put("pickupTime", formatDateTime(record.getPickupTime()));
         result.put("expectedReturnTime", formatDateTime(record.getExpectedReturnTime()));

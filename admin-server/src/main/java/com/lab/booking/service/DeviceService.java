@@ -2,10 +2,7 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.dto.DeviceDtos;
-import com.lab.booking.mapper.BorrowRecordMapper;
 import com.lab.booking.mapper.DeviceMapper;
-import com.lab.booking.mapper.RepairMapper;
-import com.lab.booking.mapper.ReservationMapper;
 import com.lab.booking.model.DeviceEntity;
 import com.lab.booking.model.DeviceStatus;
 import com.lab.booking.model.RoleCode;
@@ -31,31 +28,24 @@ import java.util.Map;
 public class DeviceService {
 
     private final DeviceMapper deviceMapper;
-    private final BorrowRecordMapper borrowRecordMapper;
-    private final ReservationMapper reservationMapper;
-    private final RepairMapper repairMapper;
     private final AuthService authService;
     private final Path deviceUploadDir;
 
     public DeviceService(
             DeviceMapper deviceMapper,
-            BorrowRecordMapper borrowRecordMapper,
-            ReservationMapper reservationMapper,
-            RepairMapper repairMapper,
             AuthService authService,
             @Value("${app.storage.upload-dir:${user.dir}/uploads}") String uploadDir
     ) {
         this.deviceMapper = deviceMapper;
-        this.borrowRecordMapper = borrowRecordMapper;
-        this.reservationMapper = reservationMapper;
-        this.repairMapper = repairMapper;
         this.authService = authService;
         this.deviceUploadDir = Path.of(uploadDir, "devices").toAbsolutePath().normalize();
     }
 
     public Map<String, Object> listDevices(String keyword, String category, DeviceStatus status, Integer pageNum, Integer pageSize) {
-        authService.currentUser();
+        UserEntity currentUser = authService.currentUser();
+        boolean isAdmin = currentUser.getRoleCode() == RoleCode.ADMIN || currentUser.getRoleCode() == RoleCode.SUPER_ADMIN;
         List<Map<String, Object>> filtered = deviceMapper.selectAll().stream()
+                .filter(device -> isAdmin || device.getStatus() != DeviceStatus.DISABLED)
                 .filter(device -> keyword == null || matchesKeyword(device, keyword))
                 .filter(device -> category == null || category.equals(device.getCategory()))
                 .filter(device -> status == null || status == device.getStatus())
@@ -121,9 +111,11 @@ public class DeviceService {
     public void deleteDevice(Long deviceId) {
         requireSuperAdmin();
         DeviceEntity device = getExistingDevice(deviceId);
-        ensureNoRelatedHistory(deviceId);
-        deleteStoredImageIfPresent(device.getImageUrl());
-        deviceMapper.deleteById(deviceId);
+        if (device.getStatus() == DeviceStatus.DISABLED) {
+            return;
+        }
+        device.setStatus(DeviceStatus.DISABLED);
+        deviceMapper.upsertDevice(device);
     }
 
     public Map<String, Object> importDevice(String deviceName, String category, String location, String description, MultipartFile image) {
@@ -180,19 +172,6 @@ public class DeviceService {
         UserEntity currentUser = authService.currentUser();
         if (currentUser.getRoleCode() != RoleCode.SUPER_ADMIN) {
             throw new ApiException(403, "只有超级管理员可以删除设备");
-        }
-    }
-
-    private void ensureNoRelatedHistory(Long deviceId) {
-        boolean relatedReservationExists = reservationMapper.selectAll().stream()
-                .anyMatch(item -> deviceId.equals(item.getDeviceId()));
-        boolean relatedBorrowRecordExists = borrowRecordMapper.selectAll().stream()
-                .anyMatch(item -> deviceId.equals(item.getDeviceId()));
-        boolean relatedRepairExists = repairMapper.selectAll().stream()
-                .anyMatch(item -> deviceId.equals(item.getDeviceId()));
-
-        if (relatedReservationExists || relatedBorrowRecordExists || relatedRepairExists) {
-            throw new ApiException(409, "设备已有关联的预约、借用或维修记录，请改为停用而不是删除");
         }
     }
 

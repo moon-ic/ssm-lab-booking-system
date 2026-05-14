@@ -40,7 +40,14 @@
       "WebFetch(domain:c.wanfangdata.com.cn)",
       "WebFetch(domain:zcb.sdu.edu.cn)",
       "WebFetch(domain:www.oalib.com)",
-      "WebFetch(domain:syjl.cbpt.cnki.net)"
+      "WebFetch(domain:syjl.cbpt.cnki.net)",
+      "WebFetch(domain:drpress.org)",
+      "WebFetch(domain:www.semanticscholar.org)",
+      "Bash(python *)",
+      "Bash(pip install *)",
+      "WebFetch(domain:journal.irpi.or.id)",
+      "WebFetch(domain:ajesjournal.org)",
+      "Bash(Out-File -FilePath C:\\\\Users\\\\86183\\\\AppData\\\\Local\\\\Temp\\\\ajes_text.txt -Encoding utf8)"
     ]
   }
 }
