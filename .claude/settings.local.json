@@ -49,7 +49,14 @@
       "WebFetch(domain:ajesjournal.org)",
       "Bash(Out-File -FilePath C:\\\\Users\\\\86183\\\\AppData\\\\Local\\\\Temp\\\\ajes_text.txt -Encoding utf8)",
       "Bash(Remove-Item \"D:\\\\program\\\\booking-skill-demo\\\\md\\\\ref18-springboot-vue-attendance.md\" -ErrorAction SilentlyContinue)",
-      "Bash(Get-ChildItem \"D:\\\\program\\\\booking-skill-demo\\\\md\\\\\" -Filter \"ref*.md\")"
+      "Bash(Get-ChildItem \"D:\\\\program\\\\booking-skill-demo\\\\md\\\\\" -Filter \"ref*.md\")",
+      "Bash(grep -E \"\\\\.\\(java|xml|sql\\)$\")",
+      "Bash(findstr -E \"\\(Reservation|Borrow|Booking|Status|Enum\\)\")",
+      "Bash(cd /d D:\\\\program\\\\booking-skill-demo)",
+      "Bash(mysql -u root -p200453 lab_booking -e ' *)",
+      "Bash(mysql *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\program\\\\booking-skill-demo\\\\admin-server\\\\src\\\\main\\\\java\\\\com\\\\lab\\\\booking\" -Recurse -Filter \"*Repair*\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

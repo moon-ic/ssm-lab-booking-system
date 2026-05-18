@@ -111,6 +111,9 @@ public class BorrowRecordService {
         record.setStatus(BorrowStatus.BORROWING);
         borrowRecordMapper.upsertBorrowRecord(record);
 
+        reservation.setStatus(ReservationStatus.BORROWING);
+        reservationMapper.upsertReservation(reservation);
+
         DeviceEntity device = getExistingDevice(record.getDeviceId());
         device.setStatus(DeviceStatus.BORROWED);
         deviceMapper.upsertDevice(device);
@@ -138,6 +141,10 @@ public class BorrowRecordService {
             record.setStatus(BorrowStatus.RETURNED);
         }
         borrowRecordMapper.upsertBorrowRecord(record);
+
+        ReservationEntity reservation = getExistingReservation(record.getReservationId());
+        reservation.setStatus(ReservationStatus.RETURNED);
+        reservationMapper.upsertReservation(reservation);
 
         DeviceEntity device = getExistingDevice(record.getDeviceId());
         device.setStatus("NORMAL".equals(actualCondition) ? DeviceStatus.AVAILABLE : DeviceStatus.DAMAGED);

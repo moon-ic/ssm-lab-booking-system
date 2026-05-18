@@ -2,6 +2,7 @@ package com.lab.booking.service;
 
 import com.lab.booking.common.ApiException;
 import com.lab.booking.mapper.NotificationMapper;
+import com.lab.booking.mapper.UserMapper;
 import com.lab.booking.model.NotificationEntity;
 import com.lab.booking.model.NotificationType;
 import com.lab.booking.model.RoleCode;
@@ -22,11 +23,28 @@ public class NotificationService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final NotificationMapper notificationMapper;
+    private final UserMapper userMapper;
     private final AuthService authService;
 
-    public NotificationService(NotificationMapper notificationMapper, @Lazy AuthService authService) {
+    public NotificationService(NotificationMapper notificationMapper, UserMapper userMapper, @Lazy AuthService authService) {
         this.notificationMapper = notificationMapper;
+        this.userMapper = userMapper;
         this.authService = authService;
+    }
+
+    public void notifyAdmins(NotificationType type, String title, String content, String relatedBizType, Long relatedBizId, LocalDateTime now) {
+        userMapper.selectAll().stream()
+                .filter(u -> u.getRoleCode() == RoleCode.SUPER_ADMIN || u.getRoleCode() == RoleCode.ADMIN)
+                .forEach(u -> createSystemNotificationIfAbsent(u.getUserId(), type, title, content, relatedBizType, relatedBizId, now));
+    }
+
+    public void notifyAdminsAndStudentManager(Long studentUserId, NotificationType type, String title, String content, String relatedBizType, Long relatedBizId, LocalDateTime now) {
+        notifyAdmins(type, title, content, relatedBizType, relatedBizId, now);
+        userMapper.selectAll().stream()
+                .filter(u -> u.getUserId().equals(studentUserId))
+                .findFirst()
+                .map(UserEntity::getManagerId)
+                .ifPresent(managerId -> createSystemNotificationIfAbsent(managerId, type, title, content, relatedBizType, relatedBizId, now));
     }
 
     public boolean createSystemNotificationIfAbsent(
@@ -72,8 +90,16 @@ public class NotificationService {
         if (currentUser.getRoleCode() == RoleCode.STUDENT) {
             throw new ApiException(403, "无权限访问");
         }
+        if (currentUser.getRoleCode() == RoleCode.TEACHER
+                || currentUser.getRoleCode() == RoleCode.ADMIN
+                || currentUser.getRoleCode() == RoleCode.SUPER_ADMIN) {
+            if (userId == null) {
+                userId = currentUser.getUserId();
+            }
+        }
+        final Long filteredUserId = userId;
         return toPage(notificationMapper.selectAll().stream()
-                .filter(n -> userId == null || userId.equals(n.getUserId()))
+                .filter(n -> filteredUserId == null || filteredUserId.equals(n.getUserId()))
                 .filter(n -> type == null || n.getType() == type)
                 .filter(n -> confirmed == null || n.isRead() == confirmed)
                 .sorted(Comparator.comparing(NotificationEntity::getNotificationId).reversed())
@@ -157,6 +183,7 @@ public class NotificationService {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("messageId", n.getNotificationId());
         result.put("notificationId", n.getNotificationId());
+        result.put("userId", n.getUserId());
         result.put("type", n.getType());
         result.put("title", n.getTitle());
         result.put("content", n.getContent());

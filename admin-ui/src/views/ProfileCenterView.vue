@@ -39,7 +39,8 @@ const returnSubmitting = ref(false);
 const activeReturnRecord = ref<BorrowRecordItem | null>(null);
 
 const returnForm = reactive({
-    returnTime: ""
+    returnTime: "",
+    deviceCondition: "NORMAL"
 });
 
 const borrowStatusOptions: BorrowStatus[] = ["PICKUP_PENDING", "BORROWING", "RETURNED", "OVERDUE"];
@@ -73,6 +74,12 @@ function roleLabel(roleCode?: string) {
 
 function messageTypeLabel(type: NotificationType) {
     switch (type) {
+        case "PENDING_RESERVATION_APPROVAL":
+            return "待审核预约";
+        case "PENDING_REPAIR":
+            return "待处理维修";
+        case "STUDENT_OVERDUE":
+            return "学生设备逾期";
         case "FIRST_LOGIN_PASSWORD_CHANGE":
             return "首次登录改密提醒";
         case "PASSWORD_RESET":
@@ -193,6 +200,7 @@ async function handlePickup(row: BorrowRecordItem) {
 function openReturnDialog(row: BorrowRecordItem) {
     activeReturnRecord.value = row;
     returnForm.returnTime = formatCurrentMinute();
+    returnForm.deviceCondition = "NORMAL";
     returnDialogVisible.value = true;
 }
 
@@ -205,7 +213,8 @@ async function submitReturn() {
 
     try {
         await returnBorrowRecord(activeReturnRecord.value.recordId, {
-            returnTime: returnForm.returnTime
+            returnTime: returnForm.returnTime,
+            deviceCondition: returnForm.deviceCondition
         });
         ElMessage.success("设备已归还");
         returnDialogVisible.value = false;
@@ -424,6 +433,12 @@ onMounted(() => {
                         format="YYYY-MM-DD HH:mm"
                         style="width: 100%"
                     />
+                </ElFormItem>
+                <ElFormItem label="设备状况">
+                    <ElSelect v-model="returnForm.deviceCondition" style="width: 100%">
+                        <ElOption label="完好" value="NORMAL" />
+                        <ElOption label="损坏" value="BROKEN" />
+                    </ElSelect>
                 </ElFormItem>
             </ElForm>
             <template #footer>

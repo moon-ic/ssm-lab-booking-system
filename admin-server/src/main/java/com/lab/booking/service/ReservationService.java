@@ -9,6 +9,7 @@ import com.lab.booking.model.BorrowRecordEntity;
 import com.lab.booking.model.BorrowStatus;
 import com.lab.booking.model.DeviceEntity;
 import com.lab.booking.model.DeviceStatus;
+import com.lab.booking.model.NotificationType;
 import com.lab.booking.model.ReservationEntity;
 import com.lab.booking.model.ReservationStatus;
 import com.lab.booking.model.RoleCode;
@@ -36,19 +37,22 @@ public class ReservationService {
     private final AuthRepository authRepository;
     private final BorrowRecordMapper borrowRecordMapper;
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     public ReservationService(
             ReservationMapper reservationMapper,
             DeviceMapper deviceMapper,
             AuthRepository authRepository,
             BorrowRecordMapper borrowRecordMapper,
-            AuthService authService
+            AuthService authService,
+            NotificationService notificationService
     ) {
         this.reservationMapper = reservationMapper;
         this.deviceMapper = deviceMapper;
         this.authRepository = authRepository;
         this.borrowRecordMapper = borrowRecordMapper;
         this.authService = authService;
+        this.notificationService = notificationService;
     }
 
     public Map<String, Object> createReservation(ReservationDtos.CreateReservationRequest request) {
@@ -73,6 +77,22 @@ public class ReservationService {
         reservation.setStatus(applicant.getRoleCode() == RoleCode.TEACHER ? ReservationStatus.APPROVED : ReservationStatus.PENDING);
         reservation.setCreatedAt(LocalDateTime.now());
         reservationMapper.upsertReservation(reservation);
+
+        LocalDateTime now = LocalDateTime.now();
+        if (applicant.getRoleCode() == RoleCode.STUDENT) {
+            if (applicant.getManagerId() != null) {
+                notificationService.createSystemNotificationIfAbsent(
+                        applicant.getManagerId(), NotificationType.PENDING_RESERVATION_APPROVAL,
+                        "新预约待审核",
+                        "学生 " + applicant.getName() + " 申请预约设备「" + device.getDeviceName() + "」，请审核。",
+                        "RESERVATION", reservation.getReservationId(), now);
+            }
+        } else {
+            notificationService.notifyAdmins(NotificationType.PENDING_RESERVATION_APPROVAL,
+                    "新预约待审核",
+                    "教师 " + applicant.getName() + " 申请预约设备「" + device.getDeviceName() + "」，请审核。",
+                    "RESERVATION", reservation.getReservationId(), now);
+        }
         return toReservationDetail(reservation);
     }
 
@@ -89,7 +109,7 @@ public class ReservationService {
                 .filter(reservation -> status == null || reservation.getStatus() == status)
                 .filter(reservation -> deviceId == null || Objects.equals(reservation.getDeviceId(), deviceId))
                 .filter(reservation -> applicantId == null || Objects.equals(reservation.getApplicantId(), applicantId))
-                .sorted(Comparator.comparing(ReservationEntity::getReservationId))
+                .sorted(Comparator.comparing(ReservationEntity::getReservationId).reversed())
                 .map(this::toReservationSummary)
                 .toList();
 
@@ -133,6 +153,15 @@ public class ReservationService {
         }
 
         reservationMapper.upsertReservation(reservation);
+
+        if (reservation.getStatus() == ReservationStatus.APPROVED) {
+            DeviceEntity device = findDevice(reservation.getDeviceId());
+            String deviceName = device == null ? String.valueOf(reservation.getDeviceId()) : device.getDeviceName();
+            notificationService.notifyAdmins(NotificationType.PENDING_RESERVATION_APPROVAL,
+                    "预约待最终审核",
+                    "设备「" + deviceName + "」的预约已通过教师审核，请管理员审批。",
+                    "RESERVATION", reservation.getReservationId(), LocalDateTime.now());
+        }
         return toReservationDetail(reservation);
     }
 
@@ -261,7 +290,8 @@ public class ReservationService {
                 .filter(item -> Objects.equals(item.getDeviceId(), deviceId))
                 .filter(item -> item.getStatus() != ReservationStatus.REJECTED
                         && item.getStatus() != ReservationStatus.CANCELLED
-                        && item.getStatus() != ReservationStatus.EXPIRED)
+                        && item.getStatus() != ReservationStatus.EXPIRED
+                        && item.getStatus() != ReservationStatus.RETURNED)
                 .anyMatch(item -> startTime.isBefore(item.getEndTime()) && endTime.isAfter(item.getStartTime()));
         if (conflict) {
             throw new ApiException(409, "同一时间段内设备已存在预约");

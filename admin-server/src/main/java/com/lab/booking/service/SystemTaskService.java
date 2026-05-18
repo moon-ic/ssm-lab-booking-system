@@ -129,15 +129,21 @@ public class SystemTaskService {
                 borrowRecordMapper.upsertBorrowRecord(record);
 
                 DeviceEntity device = deviceMapper.selectById(record.getDeviceId());
+                String deviceName = device == null ? String.valueOf(record.getDeviceId()) : device.getDeviceName();
                 boolean created = notificationService.createSystemNotificationIfAbsent(
                         record.getUserId(),
                         NotificationType.BORROW_OVERDUE,
                         "借用已逾期",
-                        "您借用的设备 " + (device == null ? record.getDeviceId() : device.getDeviceName()) + " 已逾期，请尽快归还。",
+                        "您借用的设备「" + deviceName + "」已逾期，请尽快归还。",
                         "BORROW_RECORD",
                         record.getRecordId(),
                         now
                 );
+                notificationService.notifyAdminsAndStudentManager(record.getUserId(),
+                        NotificationType.STUDENT_OVERDUE,
+                        "学生设备逾期",
+                        "学生借用的设备「" + deviceName + "」已逾期，请关注处理。",
+                        "BORROW_RECORD", record.getRecordId(), now);
                 if (created) {
                     notificationCount++;
                 }

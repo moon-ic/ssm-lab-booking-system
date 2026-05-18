@@ -61,6 +61,8 @@ const statusOptions: ReservationStatus[] = [
     "PENDING",
     "APPROVED",
     "PICKUP_PENDING",
+    "BORROWING",
+    "RETURNED",
     "REJECTED",
     "EXPIRED",
     "CANCELLED"
@@ -99,6 +101,10 @@ function reservationStatusLabel(status: ReservationStatus) {
             return "待管理员审核";
         case "PICKUP_PENDING":
             return "待领取";
+        case "BORROWING":
+            return "借用中";
+        case "RETURNED":
+            return "已归还";
         case "REJECTED":
             return "已驳回";
         case "EXPIRED":
@@ -124,6 +130,8 @@ function effectiveReservationTagType(row: ReservationItem) {
     if (row.status === "PENDING") return "warning";
     if (row.status === "APPROVED") return "info";
     if (row.status === "PICKUP_PENDING") return "success";
+    if (row.status === "BORROWING") return "primary";
+    if (row.status === "RETURNED") return "success";
     return "info";
 }
 

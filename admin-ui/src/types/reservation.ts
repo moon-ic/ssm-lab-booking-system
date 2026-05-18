@@ -3,6 +3,8 @@ export type ReservationStatus =
   | 'APPROVED'
   | 'REJECTED'
   | 'PICKUP_PENDING'
+  | 'BORROWING'
+  | 'RETURNED'
   | 'EXPIRED'
   | 'CANCELLED'
 

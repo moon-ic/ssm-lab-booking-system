@@ -22,10 +22,14 @@ const query = reactive<MessageListQuery>({
 
 const total = ref(0)
 const currentRole = computed(() => authStore.state.currentUser?.roleCode ?? authStore.state.session?.userInfo.roleCode ?? 'STUDENT')
+const currentUserId = computed(() => authStore.state.currentUser?.userId ?? authStore.state.session?.userInfo.userId)
 const isStudent = computed(() => currentRole.value === 'STUDENT')
 const showUserFilter = computed(() => currentRole.value === 'SUPER_ADMIN' || currentRole.value === 'ADMIN')
 
 const messageTypeOptions: NotificationType[] = [
+  'PENDING_RESERVATION_APPROVAL',
+  'PENDING_REPAIR',
+  'STUDENT_OVERDUE',
   'FIRST_LOGIN_PASSWORD_CHANGE',
   'PASSWORD_RESET',
   'RESERVATION_EXPIRED',
@@ -36,6 +40,12 @@ const messageTypeOptions: NotificationType[] = [
 
 function messageTypeLabel(type: NotificationType) {
   switch (type) {
+    case 'PENDING_RESERVATION_APPROVAL':
+      return '待审核预约'
+    case 'PENDING_REPAIR':
+      return '待处理维修'
+    case 'STUDENT_OVERDUE':
+      return '学生设备逾期'
     case 'FIRST_LOGIN_PASSWORD_CHANGE':
       return '首次登录改密提醒'
     case 'PASSWORD_RESET':
@@ -170,7 +180,7 @@ onMounted(() => {
           <div class="message-footer">
             <span>{{ message.createdAt }}</span>
             <ElButton
-              v-if="message.confirmStatus === 'UNCONFIRMED'"
+              v-if="message.confirmStatus === 'UNCONFIRMED' && message.userId === currentUserId"
               type="primary"
               link
               @click="handleConfirm(message.messageId)"

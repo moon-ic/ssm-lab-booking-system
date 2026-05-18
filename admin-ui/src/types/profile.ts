@@ -9,6 +9,9 @@ export type NotificationType =
   | 'BORROW_OVERDUE'
   | 'ABOUT_TO_EXPIRE_REMINDER'
   | 'OVERDUE_REMINDER'
+  | 'PENDING_RESERVATION_APPROVAL'
+  | 'PENDING_REPAIR'
+  | 'STUDENT_OVERDUE'
 
 export interface BorrowRecordItem {
   recordId: number
@@ -26,6 +29,7 @@ export interface BorrowRecordItem {
 
 export interface MessageItem {
   messageId: number
+  userId: number
   type: NotificationType
   title: string
   content: string

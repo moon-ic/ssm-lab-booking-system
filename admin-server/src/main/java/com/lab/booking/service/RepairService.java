@@ -8,6 +8,7 @@ import com.lab.booking.mapper.RepairMapper;
 import com.lab.booking.model.BorrowStatus;
 import com.lab.booking.model.DeviceEntity;
 import com.lab.booking.model.DeviceStatus;
+import com.lab.booking.model.NotificationType;
 import com.lab.booking.model.RepairEntity;
 import com.lab.booking.model.RepairStatus;
 import com.lab.booking.model.RoleCode;
@@ -33,19 +34,22 @@ public class RepairService {
     private final DeviceMapper deviceMapper;
     private final AuthRepository authRepository;
     private final AuthService authService;
+    private final NotificationService notificationService;
 
     public RepairService(
             RepairMapper repairMapper,
             BorrowRecordMapper borrowRecordMapper,
             DeviceMapper deviceMapper,
             AuthRepository authRepository,
-            AuthService authService
+            AuthService authService,
+            NotificationService notificationService
     ) {
         this.repairMapper = repairMapper;
         this.borrowRecordMapper = borrowRecordMapper;
         this.deviceMapper = deviceMapper;
         this.authRepository = authRepository;
         this.authService = authService;
+        this.notificationService = notificationService;
     }
 
     public Map<String, Object> createRepair(RepairDtos.CreateRepairRequest request) {
@@ -67,6 +71,11 @@ public class RepairService {
 
         device.setStatus(DeviceStatus.REPAIRING);
         deviceMapper.upsertDevice(device);
+
+        notificationService.notifyAdmins(NotificationType.PENDING_REPAIR,
+                "新维修申请待处理",
+                "学生 " + applicant.getName() + " 提交了设备「" + device.getDeviceName() + "」的维修申请，请处理。",
+                "REPAIR", repair.getRepairId(), repair.getCreatedAt());
         return toRepairView(repair);
     }
 
@@ -115,7 +124,12 @@ public class RepairService {
 
         switch (request.status()) {
             case PENDING, PROCESSING -> device.setStatus(DeviceStatus.REPAIRING);
-            case COMPLETED -> device.setStatus(DeviceStatus.AVAILABLE);
+            case COMPLETED -> {
+                boolean stillBorrowed = borrowRecordMapper.selectAll().stream()
+                        .anyMatch(r -> Objects.equals(r.getDeviceId(), repair.getDeviceId())
+                                && (r.getStatus() == BorrowStatus.BORROWING || r.getStatus() == BorrowStatus.OVERDUE));
+                device.setStatus(stillBorrowed ? DeviceStatus.BORROWED : DeviceStatus.AVAILABLE);
+            }
             case UNREPAIRABLE -> device.setStatus(DeviceStatus.DAMAGED);
         }
         deviceMapper.upsertDevice(device);
