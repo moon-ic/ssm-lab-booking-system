@@ -1,6 +1,6 @@
 # 参考文献原文与翻译
 
-> **文献信息：**
+> 文献信息：
 > Adekunle A A, Abolore B L, Mutiu G, et al. Design and Implementation of a Web-Based Laboratory Management System for Efficient Resource Tracking[J]. Asian Journal of Electrical Sciences, 2024, 13(2): 19-24.
 > DOI: https://doi.org/10.70112/ajes-2024.13.2.4248
 
@@ -8,19 +8,19 @@
 
 ## 原文（Original Text）
 
-**Design and Implementation of a Web-Based Laboratory Management System for Efficient Resource Tracking**
+Design and Implementation of a Web-Based Laboratory Management System for Efficient Resource Tracking
 
 Abiona Akeem Adekunle\*, Badmus Lukman Abolore, Ganiyu Mutiu and Ajinaja Micheal Olalekan
 
-*Department of Computer Science, Federal Polytechnic Ile-Oluji, Nigeria*
+_Department of Computer Science, Federal Polytechnic Ile-Oluji, Nigeria_
 
-*(Received 8 August 2024; Revised 28 August 2024; Accepted 30 September 2024; Available online 8 October 2024)*
+_(Received 8 August 2024; Revised 28 August 2024; Accepted 30 September 2024; Available online 8 October 2024)_
 
 ---
 
-**Abstract** — Effective management of laboratory resources and equipment is crucial for academic institutions to support teaching and learning activities. At the Federal Polytechnic, Ile-Oluji, Ondo State, the Computer Science Department faced challenges with manual tracking of ICT gadgets and inefficient laboratory resource management, resulting in errors and delays. This study aims to design and implement a Web-Based Laboratory Management System (WBLMS) to automate the processes of reservation, tracking, and inventory management, thereby enhancing operational efficiency and reducing errors in laboratory resource management. The research employed a system development methodology that included requirement analysis, system design, implementation, and testing. A user-centric approach was adopted to ensure the system meets the specific needs of laboratory staff and students. Key system modules include an administrator login, a dashboard for gadget reservations, transaction and inventory management sections, data visualization features, and a history tracking module. The WBLMS was deployed in the ICT laboratory and underwent initial testing, which demonstrated significant improvements in resource management. The system facilitates real-time monitoring of borrowed equipment, providing details such as model, brand, and quantity. It streamlines operations, reduces manual effort, and minimizes errors, offering an intuitive and automated solution for laboratory management. The implementation of WBLMS enhances the overall efficiency of laboratory operations by providing a user-friendly platform for managing laboratory resources. It ensures accurate record-keeping, reduces human error, and simplifies resource tracking, making it a valuable tool for academic institutions aiming to optimize their laboratory management processes.
+Abstract — Effective management of laboratory resources and equipment is crucial for academic institutions to support teaching and learning activities. At the Federal Polytechnic, Ile-Oluji, Ondo State, the Computer Science Department faced challenges with manual tracking of ICT gadgets and inefficient laboratory resource management, resulting in errors and delays. This study aims to design and implement a Web-Based Laboratory Management System (WBLMS) to automate the processes of reservation, tracking, and inventory management, thereby enhancing operational efficiency and reducing errors in laboratory resource management. The research employed a system development methodology that included requirement analysis, system design, implementation, and testing. A user-centric approach was adopted to ensure the system meets the specific needs of laboratory staff and students. Key system modules include an administrator login, a dashboard for gadget reservations, transaction and inventory management sections, data visualization features, and a history tracking module. The WBLMS was deployed in the ICT laboratory and underwent initial testing, which demonstrated significant improvements in resource management. The system facilitates real-time monitoring of borrowed equipment, providing details such as model, brand, and quantity. It streamlines operations, reduces manual effort, and minimizes errors, offering an intuitive and automated solution for laboratory management. The implementation of WBLMS enhances the overall efficiency of laboratory operations by providing a user-friendly platform for managing laboratory resources. It ensures accurate record-keeping, reduces human error, and simplifies resource tracking, making it a valuable tool for academic institutions aiming to optimize their laboratory management processes.
 
-**Keywords:** Laboratory Management, Web-Based Laboratory Management System (WBLMS), Inventory Management, Resource Tracking
+Keywords: Laboratory Management, Web-Based Laboratory Management System (WBLMS), Inventory Management, Resource Tracking
 
 ---
 
@@ -54,53 +54,53 @@ The methodology for the design and implementation of the Web-Based Laboratory Ma
 
 #### A. System Requirements Gathering
 
-1. **Stakeholder Engagement:** This phase involves interacting with key stakeholders, such as ICT lab administrators, lecturers, and students, to identify requirements for managing laboratory resources. The primary data collected include the types of ICT gadgets (e.g., computers, projectors, printers) in the lab, the expected borrowing process, inventory tracking, and user management.
+1. Stakeholder Engagement: This phase involves interacting with key stakeholders, such as ICT lab administrators, lecturers, and students, to identify requirements for managing laboratory resources. The primary data collected include the types of ICT gadgets (e.g., computers, projectors, printers) in the lab, the expected borrowing process, inventory tracking, and user management.
 
-2. **Requirements Documentation:** All functional and non-functional requirements are documented. Functional requirements include user authentication (admin and borrower login), gadget reservation, gadget inventory management, and transaction records. Non-functional requirements include system performance, scalability, and security.
+2. Requirements Documentation: All functional and non-functional requirements are documented. Functional requirements include user authentication (admin and borrower login), gadget reservation, gadget inventory management, and transaction records. Non-functional requirements include system performance, scalability, and security.
 
 #### B. System Design
 
-1. **Database Design:** The system requires a relational database for storing information about items, transactions, users, rooms, and borrower details. The database schema is structured with key tables such as:
-   - a. Users: Stores login credentials, roles (admin, borrower), and personal details.
-   - b. Inventory: Keeps details of available ICT gadgets (e.g., model, brand, quantity).
-   - c. Transactions: Tracks gadgets borrowed and returned, along with timestamps.
-   - d. Borrowers: Stores borrower information, including department, ID, and history.
-   - e. Rooms: Stores information about rooms where gadgets are located.
+1. Database Design: The system requires a relational database for storing information about items, transactions, users, rooms, and borrower details. The database schema is structured with key tables such as:
+    - a. Users: Stores login credentials, roles (admin, borrower), and personal details.
+    - b. Inventory: Keeps details of available ICT gadgets (e.g., model, brand, quantity).
+    - c. Transactions: Tracks gadgets borrowed and returned, along with timestamps.
+    - d. Borrowers: Stores borrower information, including department, ID, and history.
+    - e. Rooms: Stores information about rooms where gadgets are located.
 
 #### C. User Interface Design
 
 The system's user interface is divided into different sections: Login, Dashboard, Transactions, Inventory Management, Borrowers, Rooms, User Management, and History. Each section provides specific functionality for administrators to manage laboratory operations effectively.
 
-1. **Admin Dashboard:** Provides an overview of reservations, gadget availability, and system usage.
-2. **Transactions Module:** Tracks the borrowing and returning of gadgets, including due dates.
+1. Admin Dashboard: Provides an overview of reservations, gadget availability, and system usage.
+2. Transactions Module: Tracks the borrowing and returning of gadgets, including due dates.
 
 #### D. System Development
 
-1. **Front-End Development:** The front end is developed using web technologies such as HTML, CSS, and JavaScript for dynamic content and interactivity. The Bootstrap framework is used to ensure responsive design for both mobile and desktop use.
+1. Front-End Development: The front end is developed using web technologies such as HTML, CSS, and JavaScript for dynamic content and interactivity. The Bootstrap framework is used to ensure responsive design for both mobile and desktop use.
 
-2. **Back-End Development:** The back end is developed using PHP and MySQL for the database. PHP is chosen for server-side scripting to handle user requests, manage sessions, and interact with the database. APIs are developed to facilitate communication between the front end and back end for operations such as fetching inventory data, updating transaction logs, and managing user sessions.
+2. Back-End Development: The back end is developed using PHP and MySQL for the database. PHP is chosen for server-side scripting to handle user requests, manage sessions, and interact with the database. APIs are developed to facilitate communication between the front end and back end for operations such as fetching inventory data, updating transaction logs, and managing user sessions.
 
-3. **Authentication and Authorization:** JWT (JSON Web Token) or session-based authentication is implemented to manage user login and ensure that only authorized users (e.g., administrators) can perform sensitive operations, such as adding new items to the inventory or viewing transaction histories.
+3. Authentication and Authorization: JWT (JSON Web Token) or session-based authentication is implemented to manage user login and ensure that only authorized users (e.g., administrators) can perform sensitive operations, such as adding new items to the inventory or viewing transaction histories.
 
 #### E. Testing and Validation
 
-1. **Unit Testing:** Each module is tested individually to ensure functionality, including login, data retrieval, and gadget reservation processes.
-2. **Integration Testing:** This phase ensures that all components (database, front end, and back end) work together seamlessly.
-3. **User Acceptance Testing (UAT):** The system is deployed in a test environment, where stakeholders, such as lab administrators, validate whether the system meets their requirements.
+1. Unit Testing: Each module is tested individually to ensure functionality, including login, data retrieval, and gadget reservation processes.
+2. Integration Testing: This phase ensures that all components (database, front end, and back end) work together seamlessly.
+3. User Acceptance Testing (UAT): The system is deployed in a test environment, where stakeholders, such as lab administrators, validate whether the system meets their requirements.
 
 #### F. Deployment and Maintenance
 
-1. **Deployment:** The system is deployed on a Linux-based server and is accessible via a web browser over the institution's local intranet or the internet, depending on the configuration. Apache is used as the web server, and MySQL as the database.
+1. Deployment: The system is deployed on a Linux-based server and is accessible via a web browser over the institution's local intranet or the internet, depending on the configuration. Apache is used as the web server, and MySQL as the database.
 
-2. **Maintenance:** Regular maintenance is performed to ensure system performance and security. Updates are rolled out periodically based on user feedback or changing requirements.
+2. Maintenance: Regular maintenance is performed to ensure system performance and security. Updates are rolled out periodically based on user feedback or changing requirements.
 
 #### G. Architecture of the System
 
-1. **User Interface:** The front-end interface allows administrators to log in and manage the laboratory's inventory, borrowers, and transactions. The design is user-friendly, providing quick access to key system features such as reservations, transaction logs, and inventory status.
+1. User Interface: The front-end interface allows administrators to log in and manage the laboratory's inventory, borrowers, and transactions. The design is user-friendly, providing quick access to key system features such as reservations, transaction logs, and inventory status.
 
-2. **Application Layer:** This layer contains the core business logic, processing user requests such as fetching inventory details or recording new transactions. It communicates with the database and handles authentication, ensuring that only authorized users can access or manipulate data.
+2. Application Layer: This layer contains the core business logic, processing user requests such as fetching inventory details or recording new transactions. It communicates with the database and handles authentication, ensuring that only authorized users can access or manipulate data.
 
-3. **Database Layer:** This layer stores all information related to ICT gadgets, users, and transactions in the MySQL database. It is essential for persistent data storage and retrieval during system operations.
+3. Database Layer: This layer stores all information related to ICT gadgets, users, and transactions in the MySQL database. It is essential for persistent data storage and retrieval during system operations.
 
 ---
 
@@ -118,33 +118,33 @@ The main panel displays an inventory table listing ICT gadgets in the lab. Each 
 
 The left sidebar of the Laboratory Management System (LMS) dashboard provides navigation options for accessing various features and functionalities:
 
-1. **Dashboard:** The central hub that provides an overview of key metrics and information, such as recent transactions, inventory status, and system notifications.
-2. **Transaction:** Tracks all lending and borrowing activities within the laboratory. Each transaction logs details such as the borrower, the item borrowed, the quantity, and the borrowing/return dates.
-3. **Item:** Manages all items or gadgets available in the ICT laboratory. Administrators can add, modify, or remove items. Each item entry records information such as model, category, brand, and quantity.
-4. **Borrower:** Manages details about individuals authorized to borrow equipment from the lab. It stores information such as the borrower's name, department, and borrowing history.
-5. **Room:** Tracks and manages different rooms or locations within the lab or institution. This module allows administrators to allocate and assign equipment to specific rooms, ensuring proper resource distribution and tracking.
-6. **Inventory:** Provides a detailed overview of all lab equipment, including current quantities and statuses (e.g., new, in-use, or damaged). Administrators can use this tab to manage stock levels in real time.
-7. **Graph:** Displays visual reports and analytics on lab usage, such as frequently borrowed items, inventory trends, and other key metrics. Graphical representations enable quick interpretation of data.
-8. **User:** Manages system users and their roles (e.g., administrators, staff). Administrators can add or remove users and assign privileges, controlling access to different sections of the LMS.
-9. **History:** Maintains a log of all past actions within the system, including previous transactions, item modifications, and changes to borrower information. This feature is essential for auditing and tracking the historical use of lab resources.
+1. Dashboard: The central hub that provides an overview of key metrics and information, such as recent transactions, inventory status, and system notifications.
+2. Transaction: Tracks all lending and borrowing activities within the laboratory. Each transaction logs details such as the borrower, the item borrowed, the quantity, and the borrowing/return dates.
+3. Item: Manages all items or gadgets available in the ICT laboratory. Administrators can add, modify, or remove items. Each item entry records information such as model, category, brand, and quantity.
+4. Borrower: Manages details about individuals authorized to borrow equipment from the lab. It stores information such as the borrower's name, department, and borrowing history.
+5. Room: Tracks and manages different rooms or locations within the lab or institution. This module allows administrators to allocate and assign equipment to specific rooms, ensuring proper resource distribution and tracking.
+6. Inventory: Provides a detailed overview of all lab equipment, including current quantities and statuses (e.g., new, in-use, or damaged). Administrators can use this tab to manage stock levels in real time.
+7. Graph: Displays visual reports and analytics on lab usage, such as frequently borrowed items, inventory trends, and other key metrics. Graphical representations enable quick interpretation of data.
+8. User: Manages system users and their roles (e.g., administrators, staff). Administrators can add or remove users and assign privileges, controlling access to different sections of the LMS.
+9. History: Maintains a log of all past actions within the system, including previous transactions, item modifications, and changes to borrower information. This feature is essential for auditing and tracking the historical use of lab resources.
 
 #### C. Relational Database Design
 
 The system uses a relational database with several interconnected tables:
 
-1. **Borrow** (lms19.borrow): Tracks borrowing transactions — date_borrow, borrowed item identifier, member_id, stock_id, quantity, status, and date_return.
-2. **Room Equipment** (lms19.room_equipment): Represents equipment assigned to rooms — equipment_id, room_id, quantity.
-3. **History Logs** (lms19.history_logs): Logs actions for auditing — description, table_name, status_name, user_type, user_id, date_created.
-4. **Equipment Inventory** (lms19.equipment_inventory): Holds equipment information — equipment_id, remarks, status.
-5. **Member** (lms19.member): Represents system users — id, name, school, contact, gender, department, password, status.
-6. **Item Inventory** (lms19.item_inventory): Manages stock-level information — inventory_itemstock, item_remarks, date_change.
-7. **Room** (lms19.room): Stores room information — id, room_name, status, date_added.
-8. **Item Transfer** (lms19.item_transfer): Tracks movement of items — item_id, roomID, quantity, date_transfer, person_in_charge.
-9. **Item** (lms19.item): Represents individual equipment — deviceID, category, brand, description, type, status.
-10. **User** (lms19.user): Tracks system users (admin) — username, password, status.
-11. **Reservation** (lms19.reservation): Manages reservations — reservation_code, member_id, stock_id, room_id, assign, status, remarks.
-12. **Reservation Status** (lms19.reservation_status): Tracks reservation status — reservation_code, remark.
-13. **Relationships:** The system relies heavily on foreign keys to link data across tables. For instance, Borrow links to Member (via member_id) and Item (via stock_id); Room Equipment links Room and Equipment; Reservation is tied to Members, Items, and Rooms.
+1. Borrow (lms19.borrow): Tracks borrowing transactions — date_borrow, borrowed item identifier, member_id, stock_id, quantity, status, and date_return.
+2. Room Equipment (lms19.room_equipment): Represents equipment assigned to rooms — equipment_id, room_id, quantity.
+3. History Logs (lms19.history_logs): Logs actions for auditing — description, table_name, status_name, user_type, user_id, date_created.
+4. Equipment Inventory (lms19.equipment_inventory): Holds equipment information — equipment_id, remarks, status.
+5. Member (lms19.member): Represents system users — id, name, school, contact, gender, department, password, status.
+6. Item Inventory (lms19.item_inventory): Manages stock-level information — inventory_itemstock, item_remarks, date_change.
+7. Room (lms19.room): Stores room information — id, room_name, status, date_added.
+8. Item Transfer (lms19.item_transfer): Tracks movement of items — item_id, roomID, quantity, date_transfer, person_in_charge.
+9. Item (lms19.item): Represents individual equipment — deviceID, category, brand, description, type, status.
+10. User (lms19.user): Tracks system users (admin) — username, password, status.
+11. Reservation (lms19.reservation): Manages reservations — reservation_code, member_id, stock_id, room_id, assign, status, remarks.
+12. Reservation Status (lms19.reservation_status): Tracks reservation status — reservation_code, remark.
+13. Relationships: The system relies heavily on foreign keys to link data across tables. For instance, Borrow links to Member (via member_id) and Item (via stock_id); Room Equipment links Room and Equipment; Reservation is tied to Members, Items, and Rooms.
 
 Overall, this Entity-Relationship Diagram (ERD) is designed to manage an equipment borrowing and reservation system with detailed tracking of inventory, transfers, and user interactions.
 
@@ -178,17 +178,17 @@ Moreover, the system's ability to generate detailed reports and visual represent
 
 ## 翻译（中文翻译）
 
-**基于 Web 的实验室管理系统设计与实现——高效资源跟踪**
+基于 Web 的实验室管理系统设计与实现——高效资源跟踪
 
 Abiona Akeem Adekunle\*、Badmus Lukman Abolore、Ganiyu Mutiu、Ajinaja Micheal Olalekan
 
-*尼日利亚伊莱奥卢吉联邦理工学院计算机科学系*
+_尼日利亚伊莱奥卢吉联邦理工学院计算机科学系_
 
 ---
 
-**摘要** — 对学术机构而言，有效管理实验室资源和设备是支撑教学活动的重要基础。奥南多州伊莱奥卢吉联邦理工学院计算机科学系在 ICT 设备手工管理方面面临诸多挑战，实验室资源管理效率低下，导致差错频发、操作延误。本研究旨在设计并实现一套基于 Web 的实验室管理系统（WBLMS），对预约、跟踪与库存管理流程进行自动化处理，从而提升运营效率、减少实验室资源管理中的错误。研究采用包含需求分析、系统设计、开发实现与测试在内的系统开发方法论，并以用户为中心，确保系统满足实验室工作人员和学生的实际需求。系统核心模块包括管理员登录、设备预约仪表盘、交易与库存管理板块、数据可视化功能及历史记录追踪模块。WBLMS 部署于 ICT 实验室并完成初步测试，结果表明资源管理效率得到显著提升。系统可对借出设备进行实时监控，提供型号、品牌和数量等详细信息，有效简化操作流程、减少人工操作、降低出错率，为实验室管理提供了直观、自动化的解决方案。WBLMS 的实施通过提供友好的资源管理平台，全面提升了实验室的运营效率，确保记录准确、降低人为差错、简化资源跟踪，是学术机构优化实验室管理流程的有力工具。
+摘要 — 对学术机构而言，有效管理实验室资源和设备是支撑教学活动的重要基础。奥南多州伊莱奥卢吉联邦理工学院计算机科学系在 ICT 设备手工管理方面面临诸多挑战，实验室资源管理效率低下，导致差错频发、操作延误。本研究旨在设计并实现一套基于 Web 的实验室管理系统（WBLMS），对预约、跟踪与库存管理流程进行自动化处理，从而提升运营效率、减少实验室资源管理中的错误。研究采用包含需求分析、系统设计、开发实现与测试在内的系统开发方法论，并以用户为中心，确保系统满足实验室工作人员和学生的实际需求。系统核心模块包括管理员登录、设备预约仪表盘、交易与库存管理板块、数据可视化功能及历史记录追踪模块。WBLMS 部署于 ICT 实验室并完成初步测试，结果表明资源管理效率得到显著提升。系统可对借出设备进行实时监控，提供型号、品牌和数量等详细信息，有效简化操作流程、减少人工操作、降低出错率，为实验室管理提供了直观、自动化的解决方案。WBLMS 的实施通过提供友好的资源管理平台，全面提升了实验室的运营效率，确保记录准确、降低人为差错、简化资源跟踪，是学术机构优化实验室管理流程的有力工具。
 
-**关键词：** 实验室管理；基于 Web 的实验室管理系统（WBLMS）；库存管理；资源跟踪
+关键词： 实验室管理；基于 Web 的实验室管理系统（WBLMS）；库存管理；资源跟踪
 
 ---
 
@@ -216,18 +216,18 @@ WBLMS 的设计与实现方法论分为若干关键阶段，以确保软件满�
 
 #### A. 系统需求收集
 
-1. **利益相关方访谈**：通过与 ICT 实验室管理员、讲师和学生等关键利益相关方交流，收集实验室资源管理需求，包括实验室中 ICT 设备类型（如计算机、投影仪、打印机）、借用流程预期、库存跟踪及用户管理需求。
+1. 利益相关方访谈：通过与 ICT 实验室管理员、讲师和学生等关键利益相关方交流，收集实验室资源管理需求，包括实验室中 ICT 设备类型（如计算机、投影仪、打印机）、借用流程预期、库存跟踪及用户管理需求。
 
-2. **需求文档化**：对所有功能性和非功能性需求进行文档记录。功能性需求包括用户身份验证（管理员和借用人登录）、设备预约、库存管理和交易记录；非功能性需求涉及系统性能、可扩展性和安全性。
+2. 需求文档化：对所有功能性和非功能性需求进行文档记录。功能性需求包括用户身份验证（管理员和借用人登录）、设备预约、库存管理和交易记录；非功能性需求涉及系统性能、可扩展性和安全性。
 
 #### B. 系统设计
 
-1. **数据库设计**：系统采用关系型数据库存储物品、交易、用户、房间和借用人信息。核心数据表包括：
-   - **用户表**：存储登录凭证、角色（管理员、借用人）和个人信息。
-   - **库存表**：记录可用 ICT 设备详情（型号、品牌、数量）。
-   - **交易表**：跟踪设备借出和归还记录及时间戳。
-   - **借用人表**：存储借用人信息（所属院系、ID 和历史记录）。
-   - **房间表**：存储设备所在房间信息。
+1. 数据库设计：系统采用关系型数据库存储物品、交易、用户、房间和借用人信息。核心数据表包括：
+    - 用户表：存储登录凭证、角色（管理员、借用人）和个人信息。
+    - 库存表：记录可用 ICT 设备详情（型号、品牌、数量）。
+    - 交易表：跟踪设备借出和归还记录及时间戳。
+    - 借用人表：存储借用人信息（所属院系、ID 和历史记录）。
+    - 房间表：存储设备所在房间信息。
 
 #### C. 用户界面设计
 
@@ -235,28 +235,28 @@ WBLMS 的设计与实现方法论分为若干关键阶段，以确保软件满�
 
 #### D. 系统开发
 
-1. **前端开发**：前端采用 HTML、CSS 和 JavaScript 实现动态内容和交互功能，Bootstrap 框架确保响应式设计，兼容移动端和桌面端。
+1. 前端开发：前端采用 HTML、CSS 和 JavaScript 实现动态内容和交互功能，Bootstrap 框架确保响应式设计，兼容移动端和桌面端。
 
-2. **后端开发**：后端使用 PHP 和 MySQL 数据库。PHP 负责服务器端脚本处理、会话管理和数据库交互。开发 API 以实现前后端通信，支持库存数据查询、交易日志更新和用户会话管理等操作。
+2. 后端开发：后端使用 PHP 和 MySQL 数据库。PHP 负责服务器端脚本处理、会话管理和数据库交互。开发 API 以实现前后端通信，支持库存数据查询、交易日志更新和用户会话管理等操作。
 
-3. **认证与授权**：采用 JWT（JSON Web Token）或基于会话的身份验证机制管理用户登录，确保只有授权用户（如管理员）才能执行敏感操作（如新增库存或查看交易历史）。
+3. 认证与授权：采用 JWT（JSON Web Token）或基于会话的身份验证机制管理用户登录，确保只有授权用户（如管理员）才能执行敏感操作（如新增库存或查看交易历史）。
 
 #### E. 测试与验证
 
-1. **单元测试**：对各模块（包括登录、数据查询和设备预约流程）进行独立功能测试。
-2. **集成测试**：验证数据库、前端和后端等所有组件能够无缝协同工作。
-3. **用户验收测试（UAT）**：在测试环境中部署系统，由实验室管理员等利益相关方验证系统是否满足需求。
+1. 单元测试：对各模块（包括登录、数据查询和设备预约流程）进行独立功能测试。
+2. 集成测试：验证数据库、前端和后端等所有组件能够无缝协同工作。
+3. 用户验收测试（UAT）：在测试环境中部署系统，由实验室管理员等利益相关方验证系统是否满足需求。
 
 #### F. 部署与维护
 
-1. **部署**：系统部署于 Linux 服务器，可通过 Web 浏览器经机构内部局域网或互联网访问，采用 Apache 作为 Web 服务器，MySQL 作为数据库。
-2. **维护**：定期执行系统维护以确保性能和安全，根据用户反馈或需求变化定期发布更新。
+1. 部署：系统部署于 Linux 服务器，可通过 Web 浏览器经机构内部局域网或互联网访问，采用 Apache 作为 Web 服务器，MySQL 作为数据库。
+2. 维护：定期执行系统维护以确保性能和安全，根据用户反馈或需求变化定期发布更新。
 
 #### G. 系统架构
 
-1. **用户界面层**：前端界面供管理员登录后管理实验室库存、借用人和交易记录，设计友好，可快速访问预约、交易日志和库存状态等核心功能。
-2. **应用层**：包含核心业务逻辑，处理用户请求（如获取库存详情或记录新交易），与数据库通信并负责身份验证，确保只有授权用户才能访问或操作数据。
-3. **数据库层**：通过 MySQL 数据库持久化存储 ICT 设备、用户和交易相关的所有信息，是系统运行中数据存取的核心基础。
+1. 用户界面层：前端界面供管理员登录后管理实验室库存、借用人和交易记录，设计友好，可快速访问预约、交易日志和库存状态等核心功能。
+2. 应用层：包含核心业务逻辑，处理用户请求（如获取库存详情或记录新交易），与数据库通信并负责身份验证，确保只有授权用户才能访问或操作数据。
+3. 数据库层：通过 MySQL 数据库持久化存储 ICT 设备、用户和交易相关的所有信息，是系统运行中数据存取的核心基础。
 
 ---
 
@@ -270,15 +270,15 @@ WBLMS 的设计与实现方法论分为若干关键阶段，以确保软件满�
 
 #### B. 导航面板各模块说明
 
-1. **仪表盘**：核心概览页面，展示近期交易、库存状态和系统通知，快速呈现实验室运营全貌。
-2. **交易**：跟踪实验室内所有借还活动，记录借用人、借用物品、数量及借还日期，确保 ICT 设备使用记录准确。
-3. **物品**：管理 ICT 实验室所有设备，管理员可添加、修改或删除物品，每条记录包含型号、类别、品牌和数量。
-4. **借用人**：管理有权借用设备的用户信息，包括姓名、所属院系和借用历史。
-5. **房间**：跟踪管理实验室内的不同房间或区域，支持设备按房间分配，确保资源合理分布和追踪。
-6. **库存**：提供所有实验室设备的详细概览，包括当前数量和状态（如全新、在用或损坏），支持实时库存管理。
-7. **图表**：以可视化方式展示实验室使用报告和分析数据，如高频借用设备、库存趋势等，便于快速解读数据。
-8. **用户**：管理系统用户及其角色（如管理员、工作人员），可添加或删除用户、分配权限。
-9. **历史记录**：保存系统内所有历史操作日志，包括历史交易、物品变更和借用人信息修改，为审计和资源使用追踪提供依据。
+1. 仪表盘：核心概览页面，展示近期交易、库存状态和系统通知，快速呈现实验室运营全貌。
+2. 交易：跟踪实验室内所有借还活动，记录借用人、借用物品、数量及借还日期，确保 ICT 设备使用记录准确。
+3. 物品：管理 ICT 实验室所有设备，管理员可添加、修改或删除物品，每条记录包含型号、类别、品牌和数量。
+4. 借用人：管理有权借用设备的用户信息，包括姓名、所属院系和借用历史。
+5. 房间：跟踪管理实验室内的不同房间或区域，支持设备按房间分配，确保资源合理分布和追踪。
+6. 库存：提供所有实验室设备的详细概览，包括当前数量和状态（如全新、在用或损坏），支持实时库存管理。
+7. 图表：以可视化方式展示实验室使用报告和分析数据，如高频借用设备、库存趋势等，便于快速解读数据。
+8. 用户：管理系统用户及其角色（如管理员、工作人员），可添加或删除用户、分配权限。
+9. 历史记录：保存系统内所有历史操作日志，包括历史交易、物品变更和借用人信息修改，为审计和资源使用追踪提供依据。
 
 #### C. 关系型数据库设计
 
