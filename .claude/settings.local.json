@@ -56,7 +56,9 @@
       "Bash(mysql -u root -p200453 lab_booking -e ' *)",
       "Bash(mysql *)",
       "Bash(Get-ChildItem -Path \"D:\\\\program\\\\booking-skill-demo\\\\admin-server\\\\src\\\\main\\\\java\\\\com\\\\lab\\\\booking\" -Recurse -Filter \"*Repair*\")",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(Get-ChildItem -Path \"D:\\\\program\\\\booking-skill-demo\\\\admin-server\\\\src\" -Recurse -Directory)",
+      "Bash(Select-Object -First 20)"
     ]
   }
 }
